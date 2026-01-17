@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/utils.sh"
 
 log_info "Fetching latest AWS Provider version from Terraform Registry..."
 
-LATEST_VERSION=$(timeout 10 curl -s "https://registry.terraform.io/v1/providers/hashicorp/aws" | jq -r '.version' 2>/dev/null || echo "")
+LATEST_VERSION=$(curl --max-time 10 -s "https://registry.terraform.io/v1/providers/hashicorp/aws" | jq -r '.version' 2>/dev/null || echo "")
 
 if [[ -z "$LATEST_VERSION" ]]; then
     log_error "Failed to fetch latest version from Terraform Registry."
