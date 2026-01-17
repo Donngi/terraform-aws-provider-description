@@ -1,6 +1,6 @@
 ---
 name: create-annotated-tf
-description: Terraform AWS Providerのリソースに対する解説付きサンプルテンプレートを生成するスキル。ユーザーがTerraformリソース名（例：aws_s3_bucket, aws_lambda_function）を指定した際に、全プロパティの詳細解説・AWS公式ドキュメントリンク付きのテンプレートを出力する。出力先は ${プロジェクトルート}/terraform-template/${provider_version}/${リソース名}.tf
+description: Terraform AWS Providerのリソースに対する解説付きサンプルテンプレートを生成するスキル。ユーザーがTerraformリソース名（例：aws_s3_bucket, aws_lambda_function）を指定した際に、全プロパティの詳細解説・AWS公式ドキュメントリンク付きのテンプレートを出力する。出力先は ${プロジェクトルート}/terraform-template/${リソース名}.tf
 ---
 
 # Terraform AWS Resource Template Generator
@@ -132,9 +132,9 @@ grep -E "^\s{2}[a-z_]+ =" {リソース名}.tf | sed 's/=.*//' | tr -d ' ' | sor
 
 ### 9. ファイル出力
 
-出力先: `${プロジェクトルート}/terraform-template/${provider_version}/${リソース名}.tf`
+出力先: `${プロジェクトルート}/terraform-template/${リソース名}.tf`
 
-例: `./terraform-template/6.28.0/aws_cloudwatch_log_group.tf`
+例: `./terraform-template/aws_cloudwatch_log_group.tf`
 
 ## 品質要件
 

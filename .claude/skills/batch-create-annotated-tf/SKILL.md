@@ -47,19 +47,19 @@ curl -s "https://registry.terraform.io/v1/providers/hashicorp/aws" | jq -r '.ver
 Task(
   subagent_type="general-purpose",
   description="Generate aws_s3_bucket template",
-  prompt="Execute /create-annotated-tf aws_s3_bucket with provider version {version}. Output to terraform-template/{version}/aws_s3_bucket.tf"
+  prompt="Execute /create-annotated-tf aws_s3_bucket with provider version {version}. Output to terraform-template/aws_s3_bucket.tf"
 )
 
 Task(
   subagent_type="general-purpose",
   description="Generate aws_lambda_function template",
-  prompt="Execute /create-annotated-tf aws_lambda_function with provider version {version}. Output to terraform-template/{version}/aws_lambda_function.tf"
+  prompt="Execute /create-annotated-tf aws_lambda_function with provider version {version}. Output to terraform-template/aws_lambda_function.tf"
 )
 
 Task(
   subagent_type="general-purpose",
   description="Generate aws_iam_role template",
-  prompt="Execute /create-annotated-tf aws_iam_role with provider version {version}. Output to terraform-template/{version}/aws_iam_role.tf"
+  prompt="Execute /create-annotated-tf aws_iam_role with provider version {version}. Output to terraform-template/aws_iam_role.tf"
 )
 ```
 
@@ -81,7 +81,7 @@ Task(
 ## 手順
 1. /create-annotated-tf skill を実行: Skill(skill="create-annotated-tf", args="{resource_name}")
 2. skill の指示に従ってテンプレートを生成
-3. 出力先: ${プロジェクトルート}/terraform-template/{provider_version}/{resource_name}.tf
+3. 出力先: ${プロジェクトルート}/terraform-template/{resource_name}.tf
 
 ## 制約
 - Provider Version: {provider_version}
@@ -110,8 +110,8 @@ Provider Version: 6.x.x
 実行方式: 並列処理
 
 ### 成功 (M件)
-- aws_s3_bucket → terraform-template/6.x.x/aws_s3_bucket.tf
-- aws_lambda_function → terraform-template/6.x.x/aws_lambda_function.tf
+- aws_s3_bucket → terraform-template/aws_s3_bucket.tf
+- aws_lambda_function → terraform-template/aws_lambda_function.tf
 
 ### 失敗 (K件)
 - aws_xxx: エラー理由
