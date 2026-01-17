@@ -1,146 +1,303 @@
 ---
 name: batch-create-annotated-tf
-description: target_resources.txt に記載された複数のTerraformリソースに対し、解説付きテンプレートを一括生成するスキル。内部で create-annotated-tf skill を繰り返し呼び出す。
+description: AWS Providerのバージョン差分を自動検出し、変更があったTerraformリソースに対して解説付きテンプレートを一括生成するスキル。前回処理バージョンとの差分のみを処理する。
 ---
 
-# Batch Create Annotated Terraform Templates
+# Batch Create Annotated Terraform Templates (Auto-Diff Version)
 
-`target_resources.txt` に記載された複数のAWSリソースに対し、解説付きテンプレートを**並列で**一括生成する。
+AWS Providerのバージョン差分を自動検出し、変更があったリソース（新規追加・属性変更）のみ解説付きテンプレートを**並列で**一括生成する。
+
+## アーキテクチャ
+
+### バージョン管理ファイル
+
+**ファイル名:** `processed_provider_version.json`  
+**配置場所:** プロジェクトルート直下
+
+```json
+{
+  "format_version": "1.0",
+  "last_processed": {
+    "version": "6.28.0",
+    "timestamp": "2026-01-17T14:30:00Z",
+    "total_resources": 1593,
+    "processed_resources": 1593,
+    "schema_checksum": "sha256:abcd1234..."
+  },
+  "processing_history": [
+    {
+      "version": "6.27.0",
+      "timestamp": "2026-01-10T10:00:00Z",
+      "total_resources": 1590,
+      "processed_resources": 15
+    }
+  ]
+}
+```
+
+### 処理フロー
+
+```
+1. 最新バージョン取得 → lib/01_fetch_latest_version.sh
+2. 前回バージョン読み込み → lib/02_load_last_version.sh
+3. バージョン比較（同一なら終了）
+4. スキーマ準備 → lib/03_prepare_schema.sh
+5. 差分検出 → lib/04_detect_changes.sh
+6. 並列処理実行（Task tool）
+7. 削除リソースのアーカイブ → lib/05_archive_removed.sh
+8. バージョン管理ファイル更新 → lib/06_update_version_file.sh
+9. 変更ログ生成 → lib/07_generate_changelog.sh
+```
 
 ## ワークフロー
 
-### 1. リソースリストの読み込み
-
-`${プロジェクトルート}/target_resources.txt` を読み込む。
-
-**ファイルフォーマット:**
-```
-# コメント行（#で始まる行は無視）
-aws_s3_bucket
-aws_lambda_function
-aws_iam_role
-```
-
-- 1行に1リソース名
-- 空行は無視
-- `#` で始まる行はコメントとして無視
-
-### 2. AWS Providerバージョンの決定とスキーマ準備
-
-バージョン指定がない場合は、Terraform Registry API から最新バージョンを取得:
+### Step 1: 最新バージョン取得
 
 ```bash
-curl -s "https://registry.terraform.io/v1/providers/hashicorp/aws" | jq -r '.version'
+LATEST_VERSION=$(lib/01_fetch_latest_version.sh)
 ```
 
-スキーマが未取得の場合は、`tmp/${provider_version}/` で `terraform init` と `terraform providers schema -json` を実行してスキーマを準備する。
+**実装:** `lib/01_fetch_latest_version.sh`
+- Terraform Registry APIから最新バージョンを取得
+- タイムアウト: 10秒
+- 出力: バージョン番号（例: `6.28.0`）
 
-### 3. 並列処理の実行（重要）
+### Step 2: 前回バージョン読み込み
 
-**Task tool を使用して全リソースを並列処理する。**
+```bash
+LAST_VERSION=$(lib/02_load_last_version.sh)
+```
 
-1つのメッセージ内で、リソース数分の Task tool 呼び出しを同時に行う:
+**実装:** `lib/02_load_last_version.sh`
+- `processed_provider_version.json`から前回バージョンを取得
+- ファイル破損時は自動復旧（バックアップまたは初期化）
+- 出力: バージョン番号または空文字列
+
+### Step 3: バージョン比較
+
+```bash
+if [[ "$LATEST_VERSION" == "$LAST_VERSION" && -n "$LAST_VERSION" ]]; then
+  echo "✅ No version change detected. Provider version: $LATEST_VERSION"
+  exit 0
+fi
+
+echo "🔄 Version update detected: ${LAST_VERSION:-'(initial)'} → $LATEST_VERSION"
+```
+
+### Step 4: スキーマ準備
+
+```bash
+CURRENT_SCHEMA=$(lib/03_prepare_schema.sh "$LATEST_VERSION")
+LAST_SCHEMA="tmp/${LAST_VERSION}/schema.json"
+```
+
+**実装:** `lib/03_prepare_schema.sh <version>`
+- 指定バージョンのスキーマが未取得の場合、取得する
+- `terraform init` + `terraform providers schema -json`を実行
+- 出力: スキーマファイルのパス
+
+### Step 5: 差分検出
+
+```bash
+if [[ -n "$LAST_VERSION" && -f "$LAST_SCHEMA" ]]; then
+  CHANGES=$(lib/04_detect_changes.sh "$CURRENT_SCHEMA" "$LAST_SCHEMA")
+else
+  # 初回実行
+  CHANGES=$(lib/04_detect_changes.sh "$CURRENT_SCHEMA")
+fi
+```
+
+**実装:** `lib/04_detect_changes.sh <current_schema> [last_schema]`
+
+**出力:** JSON形式の差分情報
+```json
+{
+  "added": ["aws_bedrock_agent", "aws_new_service"],
+  "changed": ["aws_s3_bucket", "aws_lambda_function"],
+  "removed": ["aws_old_service"]
+}
+```
+
+**差分検出アルゴリズム:**
+
+#### 新規リソース検出
+```bash
+comm -13 <(前回のリソースリスト | sort) <(現在のリソースリスト | sort)
+```
+- `comm -13`: 第1列（前回のみ）と第3列（共通）を非表示
+- **結果**: 現在のみに存在 = 新規追加リソース
+
+#### 変更リソース検出
+```bash
+for resource in $COMMON_RESOURCES; do
+  CURRENT_HASH=$(jq -c ".provider_schemas[...].resource_schemas[\"$resource\"]" current | sha256sum)
+  LAST_HASH=$(jq -c ".provider_schemas[...].resource_schemas[\"$resource\"]" last | sha256sum)
+  
+  if [[ "$CURRENT_HASH" != "$LAST_HASH" ]]; then
+    # 変更されたリソース
+  fi
+done
+```
+- リソース定義全体のSHA256ハッシュを比較
+- ハッシュ値が異なる = スキーマ定義が変更された
+
+#### 削除リソース検出
+```bash
+comm -23 <(前回のリソースリスト | sort) <(現在のリソースリスト | sort)
+```
+- `comm -23`: 第2列（現在のみ）と第3列（共通）を非表示
+- **結果**: 前回のみに存在 = 削除されたリソース
+
+### Step 6: 処理対象の決定と並列処理
+
+```bash
+ADDED=$(echo "$CHANGES" | jq -r '.added[]')
+CHANGED=$(echo "$CHANGES" | jq -r '.changed[]')
+RESOURCES_TO_PROCESS=$(echo -e "${ADDED}\n${CHANGED}" | grep -v '^$' | sort -u)
+
+TOTAL_COUNT=$(echo "$RESOURCES_TO_PROCESS" | wc -l)
+
+if [[ $TOTAL_COUNT -eq 0 ]]; then
+  echo "✅ No changes detected in resources."
+  exit 0
+fi
+
+echo "📋 Processing $TOTAL_COUNT resources..."
+```
+
+**Task toolで並列処理:**
 
 ```
-# 例: 3リソースの場合、1つのメッセージで3つのTask呼び出しを並列実行
+# 例: 3リソースの場合、1つのメッセージで3つのTask呼び出し
 
 Task(
   subagent_type="general-purpose",
   description="Generate aws_s3_bucket template",
-  prompt="Execute /create-annotated-tf aws_s3_bucket with provider version {version}. Output to terraform-template/aws_s3_bucket.tf"
+  prompt="Execute /create-annotated-tf aws_s3_bucket with provider version {version}"
 )
 
 Task(
   subagent_type="general-purpose",
   description="Generate aws_lambda_function template",
-  prompt="Execute /create-annotated-tf aws_lambda_function with provider version {version}. Output to terraform-template/aws_lambda_function.tf"
+  prompt="Execute /create-annotated-tf aws_lambda_function with provider version {version}"
 )
-
-Task(
-  subagent_type="general-purpose",
-  description="Generate aws_iam_role template",
-  prompt="Execute /create-annotated-tf aws_iam_role with provider version {version}. Output to terraform-template/aws_iam_role.tf"
-)
+...
 ```
 
 **並列実行のポイント:**
-- 全てのTask呼び出しを**1つのレスポンス内**で行うこと
-- これにより各エージェントが同時に起動し、並列処理される
-- 各エージェントは独立してスキーマ解析・ドキュメント取得・テンプレート生成を行う
+- 全てのTask呼び出しを**1つのレスポンス内**で行う
+- 各エージェントが同時に起動し、並列処理される
+- 各エージェントは独立してテンプレート生成を行う
 
-### 4. Task プロンプトのテンプレート
+### Step 7: 削除リソースのアーカイブ
 
-各 Task に渡すプロンプト:
-
-```
-あなたは Terraform テンプレート生成エージェントです。
-
-## タスク
-リソース「{resource_name}」の解説付きテンプレートを生成してください。
-
-## 手順
-1. /create-annotated-tf skill を実行: Skill(skill="create-annotated-tf", args="{resource_name}")
-2. skill の指示に従ってテンプレートを生成
-3. 出力先: ${プロジェクトルート}/terraform-template/{resource_name}.tf
-
-## 制約
-- Provider Version: {provider_version}
-- スキーマファイル: ${プロジェクトルート}/tmp/{provider_version}/schema.json（存在する場合は再利用）
-- 品質要件に従い、全属性を網羅すること
-
-完了したら、生成したファイルパスと処理結果（成功/失敗）を報告してください。
+```bash
+REMOVED=$(echo "$CHANGES" | jq -c '.removed')
+lib/05_archive_removed.sh "$REMOVED"
 ```
 
-### 5. 結果の収集
+**実装:** `lib/05_archive_removed.sh <removed_resources_json>`
+- 削除されたリソースのテンプレートを `terraform-template/archived/` に移動
 
-全ての Task が完了したら、各エージェントの結果を収集:
+### Step 8: バージョン管理ファイル更新
 
-- 成功: 生成されたファイルパスを記録
-- 失敗: エラー内容を記録
+```bash
+TOTAL_RESOURCES=$(jq -r '.provider_schemas[...].resource_schemas | keys | length' "$CURRENT_SCHEMA")
+SCHEMA_CHECKSUM=$(sha256sum "$CURRENT_SCHEMA" | cut -d' ' -f1)
 
-### 6. 結果サマリーの出力
-
-全リソースの処理完了後、以下の形式でサマリーを出力:
-
+lib/06_update_version_file.sh "$LATEST_VERSION" "$TOTAL_RESOURCES" "$TOTAL_COUNT" "$SCHEMA_CHECKSUM"
 ```
-## 処理結果サマリー
 
-Provider Version: 6.x.x
-処理対象: N リソース
-実行方式: 並列処理
+**実装:** `lib/06_update_version_file.sh <version> <total> <processed> <checksum>`
+- `processed_provider_version.json`を更新
+- バックアップを自動作成（`.backup`）
 
-### 成功 (M件)
-- aws_s3_bucket → terraform-template/aws_s3_bucket.tf
-- aws_lambda_function → terraform-template/aws_lambda_function.tf
+### Step 9: 変更ログ生成
 
-### 失敗 (K件)
-- aws_xxx: エラー理由
+```bash
+lib/07_generate_changelog.sh "$LATEST_VERSION" "$LAST_VERSION" "$CHANGES"
+```
+
+**実装:** `lib/07_generate_changelog.sh <new_version> <old_version> <changes_json>`
+- 変更ログを `tmp/{version}/change_log.txt` に生成
+
+**出力例:**
+```
+Provider Version Update: 6.27.0 → 6.28.0
+Generated: 2026-01-17T15:30:00Z
+
+=== Summary ===
+New Resources: 3
+Changed Resources: 15
+Removed Resources: 1
+Total Processed: 18
+
+=== New Resources ===
+aws_bedrock_agent
+...
+
+=== Changed Resources ===
+aws_s3_bucket
+...
+
+=== Removed Resources (Archived) ===
+aws_old_service
 ```
 
 ## 使用例
 
 ```bash
-# target_resources.txt を準備
-echo "aws_s3_bucket
-aws_lambda_function
-aws_iam_role" > target_resources.txt
-
-# skillを実行（並列処理）
+# 初回実行（全リソース処理）
 /batch-create-annotated-tf
+
+# 2回目以降（差分のみ処理）
+/batch-create-annotated-tf
+
+# バージョンに変更がない場合
+# → "No version change detected" メッセージが表示され、処理なし
+```
+
+## ファイル構成
+
+```
+プロジェクトルート/
+├── processed_provider_version.json      # バージョン管理ファイル
+├── .claude/skills/batch-create-annotated-tf/
+│   ├── SKILL.md                         # このファイル
+│   └── lib/
+│       ├── utils.sh                     # 共通ユーティリティ
+│       ├── 01_fetch_latest_version.sh   # Step 1
+│       ├── 02_load_last_version.sh      # Step 2
+│       ├── 03_prepare_schema.sh         # Step 3
+│       ├── 04_detect_changes.sh         # Step 4
+│       ├── 05_archive_removed.sh        # Step 5
+│       ├── 06_update_version_file.sh    # Step 6
+│       └── 07_generate_changelog.sh     # Step 7
+├── tmp/
+│   └── {version}/
+│       ├── providers.tf
+│       ├── schema.json
+│       └── change_log.txt
+└── terraform-template/
+    ├── {resource}.tf
+    └── archived/
+        └── {removed_resource}.tf
 ```
 
 ## 並列処理の利点
 
-| 方式 | 3リソースの場合 | 10リソースの場合 |
-|------|-----------------|------------------|
-| 直列処理 | 約15分 | 約50分 |
-| **並列処理** | **約5分** | **約5-10分** |
+| 方式 | 3リソース | 10リソース | 差分18件 |
+|------|----------|-----------|---------|
+| 直列処理 | 約15分 | 約50分 | 約90分 |
+| **並列処理** | **約5分** | **約5-10分** | **約8-12分** |
 
-※ 時間は目安。並列処理により、リソース数が増えても処理時間の増加が緩やかになる。
+※ 並列処理により、リソース数が増えても処理時間の増加が緩やかになる。
 
 ## 注意事項
 
-- 並列実行のため、一時的にリソース使用量が増加する
-- エラーが発生しても他のリソースの処理は継続される
-- 既存ファイルは上書きされる
-- スキーマファイルは共有されるため、最初に準備しておくと効率的
+- **差分のみ処理:** 前回バージョンから変更があったリソースのみ処理
+- **初回実行:** `processed_provider_version.json` が存在しない場合、全リソースを処理
+- **並列実行:** 一時的にリソース使用量が増加
+- **エラー継続:** エラーが発生しても他のリソースの処理は継続
+- **上書き:** 既存テンプレートファイルは上書きされる
+- **アーカイブ:** 削除されたリソースのテンプレートは `terraform-template/archived/` に移動
