@@ -18,6 +18,16 @@ excluded_tools:
 
 AWS Providerのリソースに対し、全プロパティ網羅・解説付きのサンプルテンプレートを生成する。
 
+## ツール使用の制約
+
+**絶対に使用禁止:**
+- WebSearch
+- WebFetch
+
+**使用必須:**
+- ドキュメント取得は必ずMCPツール（`SearchAwsProviderDocs`、`aws___search_documentation`、`aws___read_documentation`）を使用
+- エラーが発生した場合でも、Web検索にフォールバックしない
+
 ## 重要な原則
 
 **スキーマが信頼の源泉（Source of Truth）**

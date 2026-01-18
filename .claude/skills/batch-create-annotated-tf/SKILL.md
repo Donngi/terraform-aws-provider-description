@@ -1,11 +1,34 @@
 ---
 name: batch-create-annotated-tf
 description: AWS Providerのバージョン差分を自動検出し、変更があったTerraformリソースに対して解説付きテンプレートを一括生成するスキル。前回処理バージョンとの差分のみを処理する。
+available_tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Task
+  - mcp__*
+excluded_tools:
+  - WebSearch
+  - WebFetch
 ---
 
 # Batch Create Annotated Terraform Templates (Auto-Diff Version)
 
 AWS Providerのバージョン差分を自動検出し、変更があったリソース（新規追加・属性変更）のみ解説付きテンプレートを**並列で**一括生成する。
+
+## ツール使用の制約
+
+**絶対に使用禁止:**
+- WebSearch
+- WebFetch
+
+**使用必須:**
+- Task toolで`/create-annotated-tf`を呼び出す際も、Web検索は使用されない
+- ドキュメント取得は必ずMCPツール経由で行われる
+- エラーが発生した場合でも、Web検索にフォールバックしない
 
 ## 実行ガイドライン（Claudeへの指示）
 
