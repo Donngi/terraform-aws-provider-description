@@ -1,6 +1,17 @@
 ---
 name: create-annotated-tf
 description: Terraform AWS Providerのリソースに対する解説付きサンプルテンプレートを生成するスキル。ユーザーがTerraformリソース名（例：aws_s3_bucket, aws_lambda_function）を指定した際に、全プロパティの詳細解説・AWS公式ドキュメントリンク付きのテンプレートを出力する。出力先は ${プロジェクトルート}/terraform-template/${リソース名}.tf
+available_tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - mcp__*
+excluded_tools:
+  - WebSearch
+  - WebFetch
 ---
 
 # Terraform AWS Resource Template Generator
