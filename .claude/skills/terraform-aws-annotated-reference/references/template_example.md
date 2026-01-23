@@ -19,7 +19,7 @@
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group
 #
 # Provider Version: 6.28.0
-# Generated: {YYYY-MM-DD}
+# Generated: 2026-01-22
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -163,16 +163,22 @@ resource "aws_cloudwatch_log_group" "example" {
 各プロパティには以下の形式でコメントを記載:
 
 ```hcl
-  # {プロパティ名} ({Required/Optional}{, Forces new resource があれば追記})
+  # {プロパティ名} ({Optional/Required}{, Forces new resource があれば追記})
   # 設定内容: {何を設定するためのプロパティかの説明}
   # 設定可能な値:
   #   - {値1}: {説明}
   #   - {値2}: {説明}
+  # 省略時: {デフォルト値や動作の説明}（オプショナルの場合）
   # 関連機能: {機能名} (名称のある機能に関連する場合のみ)
   #   {機能の簡単な説明}
   #   - {公式ドキュメントのURL}
+  # 注意: {注意事項}（必要な場合のみ）
   property_name = "value"
 ```
+
+**グルーピングルール:**
+- 「必須設定」「オプション設定」ではなく、機能カテゴリ別にグループ化
+- 例: 「基本設定」「ネットワーク設定」「暗号化設定」「タグ設定」等
 
 ## ファイルヘッダーフォーマット
 
@@ -191,7 +197,9 @@ resource "aws_cloudwatch_log_group" "example" {
 #
 # Provider Version: {version}
 # Generated: {YYYY-MM-DD}
-# NOTE: このテンプレートは生成時点の情報に基づいています。最新の仕様については公式ドキュメントをご確認ください。
+# NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
+#       情報が古くなっている可能性、誤りを含む可能性があるため、
+#       正確な最新仕様は公式ドキュメントを参照してください。
 #
 #---------------------------------------------------------------
 ```
