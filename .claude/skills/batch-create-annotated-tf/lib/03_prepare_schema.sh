@@ -17,7 +17,7 @@ fi
 
 VERSION=$1
 PROJECT_ROOT=$(get_project_root)
-SCHEMA_DIR="$PROJECT_ROOT/tmp/$VERSION"
+SCHEMA_DIR="$PROJECT_ROOT/.local/$VERSION"
 SCHEMA_FILE="$SCHEMA_DIR/schema.json"
 
 if [[ -f "$SCHEMA_FILE" ]]; then

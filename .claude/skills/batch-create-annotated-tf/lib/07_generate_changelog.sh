@@ -20,7 +20,7 @@ OLD_VERSION=${2:-"(initial)"}
 CHANGES_JSON=$3
 
 PROJECT_ROOT=$(get_project_root)
-CHANGE_LOG="$PROJECT_ROOT/tmp/$NEW_VERSION/change_log.txt"
+CHANGE_LOG="$PROJECT_ROOT/.local/$NEW_VERSION/change_log.txt"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 log_info "Generating change log..."
