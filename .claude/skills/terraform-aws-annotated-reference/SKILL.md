@@ -49,6 +49,9 @@ description: 単一のTerraform AWSリソースに対する全プロパティ解
 ユーザーから以下を取得:
 - **リソース名** (必須): `aws_cloudwatch_log_group` など
 - **AWS Providerバージョン** (任意): 指定がなければ最新バージョンを使用
+- **output_mode** (任意): 出力モード
+  - `file` (デフォルト): ファイルに書き込む
+  - `content`: テンプレート内容をJSON形式で出力（ファイル書き込みなし）
 
 バージョン未指定時はTerraform Registry APIから最新バージョンを取得:
 ```bash
@@ -180,11 +183,29 @@ grep -E "^\s{2}[a-z_]+ =" {リソース名}.tf | sed 's/=.*//' | tr -d ' ' | sor
 
 両者を比較し、差分がないことを確認。
 
-### 8. ファイル出力
+### 8. 出力
+
+**output_mode=file の場合（デフォルト）:**
 
 出力先: `${プロジェクトルート}/.local/terraform-aws-annotated-reference/${provider_version}/${リソース名}.tf`
 
 例: `./.local/terraform-aws-annotated-reference/6.28.0/aws_cloudwatch_log_group.tf`
+
+**output_mode=content の場合:**
+
+ファイル書き込みを行わず、以下のJSON形式で出力:
+
+成功時:
+```json
+{"status":"success","resource":"{リソース名}","provider_version":"{version}","content":"{テンプレート全文}"}
+```
+
+エラー時:
+```json
+{"status":"error","resource":"{リソース名}","provider_version":"{version}","error_message":"{エラー詳細}"}
+```
+
+**注意:** `output_mode=content`の場合、Writeツールは使用しない。
 
 ## 品質要件
 
