@@ -18,24 +18,51 @@ if [[ ! -f "$OUTPUT_FILE" ]]; then
     exit 8
 fi
 
-# JSON行を抽出（{"status": で始まる行）
-JSON_LINE=$(grep -o '{"status":"[^"]*".*}' "$OUTPUT_FILE" | head -n1)
+# Pythonで堅牢にJSON抽出（複数行対応）
+EXTRACTED=$(jq -r '.message.content[]?.text // empty' "$OUTPUT_FILE" 2>/dev/null | python3 -c "
+import sys, json, re
 
-if [[ -z "$JSON_LINE" ]]; then
+text = sys.stdin.read()
+
+match = re.search(r'\{\"status\":\"(success|error)\",\"resource\":\"aws_[^\"]+\".*', text, re.DOTALL)
+if not match:
+    sys.exit(1)
+
+json_str = match.group(0)
+
+for end_pos in range(len(json_str), 0, -1):
+    try:
+        obj = json.loads(json_str[:end_pos])
+        print('STATUS=' + obj.get('status', ''))
+        print('CONTENT_START')
+        print(obj.get('content', ''))
+        print('CONTENT_END')
+        if obj.get('status') == 'error':
+            print('ERROR_MSG=' + obj.get('error_message', ''))
+        sys.exit(0)
+    except json.JSONDecodeError:
+        continue
+
+sys.exit(2)
+")
+
+EXTRACT_EXIT=$?
+
+if [[ $EXTRACT_EXIT -eq 1 ]]; then
     echo "ERROR: no_json_output" >&2
     exit 1
 fi
 
-# statusを確認
-STATUS=$(echo "$JSON_LINE" | jq -r '.status' 2>/dev/null)
-
-if [[ $? -ne 0 ]]; then
+if [[ $EXTRACT_EXIT -eq 2 ]]; then
     echo "ERROR: invalid_json" >&2
     exit 2
 fi
 
+# STATUS取得
+STATUS=$(echo "$EXTRACTED" | grep '^STATUS=' | cut -d= -f2)
+
 if [[ "$STATUS" == "error" ]]; then
-    ERROR_MSG=$(echo "$JSON_LINE" | jq -r '.error_message')
+    ERROR_MSG=$(echo "$EXTRACTED" | grep '^ERROR_MSG=' | cut -d= -f2-)
     echo "ERROR: subagent_error: $ERROR_MSG" >&2
     exit 3
 fi
@@ -45,10 +72,10 @@ if [[ "$STATUS" != "success" ]]; then
     exit 4
 fi
 
-# contentを抽出
-CONTENT=$(echo "$JSON_LINE" | jq -r '.content')
+# CONTENT取得（CONTENT_STARTとCONTENT_ENDの間）
+CONTENT=$(echo "$EXTRACTED" | sed -n '/^CONTENT_START$/,/^CONTENT_END$/p' | sed '1d;$d')
 
-if [[ -z "$CONTENT" || "$CONTENT" == "null" ]]; then
+if [[ -z "$CONTENT" ]]; then
     echo "ERROR: empty_content" >&2
     exit 5
 fi
