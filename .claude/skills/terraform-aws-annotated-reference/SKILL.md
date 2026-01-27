@@ -32,6 +32,50 @@ description: 単一のTerraform AWSリソースに対する全プロパティ解
 }
 ```
 
+## 重要な制約（output_mode=content時）【最重要】
+
+**⚠️ このセクションは `output_mode=content` で呼び出された場合に最優先で遵守すること**
+
+### 絶対禁止事項
+
+以下のツールは**絶対に使用してはならない**:
+- **Writeツール** - ファイル書き込み禁止
+- **Editツール** - ファイル編集禁止
+- **NotebookEditツール** - ノートブック編集禁止
+
+### 必須動作
+
+テンプレート内容を**JSON形式のテキストとしてそのまま出力**する。
+
+### 出力形式（厳密に遵守）
+
+**成功時（この形式で出力すること）:**
+```json
+{"status":"success","resource":"aws_xxx","provider_version":"6.28.0","content":"...テンプレート全文..."}
+```
+
+**エラー時:**
+```json
+{"status":"error","resource":"aws_xxx","provider_version":"6.28.0","error_message":"...エラー詳細..."}
+```
+
+### 出力の注意事項
+
+1. **JSONは1行で出力**（改行なし）
+2. **contentフィールド内の改行は`\n`でエスケープ**
+3. **テンプレート全文をcontentに含める**（省略不可）
+4. **コードブロックで囲まない**（```json``` 不要）
+5. **説明文を付けない**（JSONのみ出力）
+
+### 違反時の動作
+
+Writeツールを使用しようとした場合:
+- フックによりブロックされる
+- 結果として何も出力されない
+- 親エージェントで`no_json_output`エラーとなる
+
+---
+
 ## 重要な原則
 
 **スキーマが信頼の源泉（Source of Truth）**
@@ -193,11 +237,14 @@ grep -E "^\s{2}[a-z_]+ =" {リソース名}.tf | sed 's/=.*//' | tr -d ' ' | sor
 
 **output_mode=content の場合:**
 
-ファイル書き込みを行わず、以下のJSON形式で出力:
+**⚠️ 重要: 「重要な制約（output_mode=content時）【最重要】」セクションを必ず遵守**
+
+1. **Writeツールは絶対に使用しない**（フックでブロックされる）
+2. ファイル書き込みを行わず、以下のJSON形式で**テキストとしてそのまま出力**
 
 成功時:
 ```json
-{"status":"success","resource":"{リソース名}","provider_version":"{version}","content":"{テンプレート全文}"}
+{"status":"success","resource":"{リソース名}","provider_version":"{version}","content":"{テンプレート全文（\nでエスケープ）}"}
 ```
 
 エラー時:
@@ -205,7 +252,12 @@ grep -E "^\s{2}[a-z_]+ =" {リソース名}.tf | sed 's/=.*//' | tr -d ' ' | sor
 {"status":"error","resource":"{リソース名}","provider_version":"{version}","error_message":"{エラー詳細}"}
 ```
 
-**注意:** `output_mode=content`の場合、Writeツールは使用しない。
+**重要な注意事項:**
+- JSONは**1行で出力**（改行なし）
+- contentフィールド内の改行は**`\n`でエスケープ**
+- **コードブロック（```）で囲まない**
+- **説明文を付けない**（JSONのみ出力）
+- Writeツールを使用するとフックでブロックされ、`no_json_output`エラーとなる
 
 ## 品質要件
 
