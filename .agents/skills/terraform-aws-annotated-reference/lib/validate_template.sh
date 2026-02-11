@@ -165,7 +165,7 @@ if [ -f "$SCHEMA" ]; then
     record_fail "Schema" "スキーマからリソース ${RESOURCE_NAME} の属性を取得できませんでした"
   else
     # テンプレートから属性名を抽出（代入行 + コメント内の属性名定義）
-    template_attrs=$(grep -oE '^\s+#?\s*[a-z_]+\s+[=({]|^\s+[a-z_]+\s*=' "$TEMPLATE" | sed 's/[#=({].*//' | tr -d ' ' | sort -u)
+    template_attrs=$(grep -oE '^\s+#?\s*[a-z0-9_]+\s+[=({]|^\s+[a-z0-9_]+\s*=' "$TEMPLATE" | sed 's/[#=({].*//' | tr -d ' ' | sort -u)
 
     # Attributes Referenceに記載される属性（テンプレート本体には不要）
     # id, tags_all はcomputed属性としてAttributes Referenceに記載
