@@ -1,15 +1,7 @@
 ---
 name: batch-create-annotated-tf
 description: AWS Providerのバージョン差分を自動検出し、変更があったTerraformリソースに対して解説付きテンプレートを一括生成するスキル。前回処理バージョンとの差分のみを処理する。
-available_tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - Task
-  - mcp__*
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, Skill
 ---
 
 # Batch Create Annotated Terraform Templates
@@ -84,14 +76,20 @@ for i, resource in enumerate(changed_resources):
     result = Task(
         subagent_type="general-purpose",
         description="Generate {resource} template",
-        prompt="/terraform-aws-annotated-reference {resource} provider_version={version} output_dir=terraform-templat
+        prompt="/terraform-aws-annotated-reference {resource} provider_version={version} output_dir=terraform-template
 
-重要な指示:
-- Claude Codeのsandbox環境において、ユーザーに確認を求めずに作業ができる手段のみで操作を完了してください
+ツール使用ルール（厳守）:
+- ファイルの作成・編集は必ずWriteツールまたはEditツールを使用すること
+- Bashでのリダイレクト（>, >>）、tee、heredocによるファイル書き込みは禁止（フックでブロックされる）
+- Bashツールの使用は以下の用途のみに限定:
+  - terraform init / terraform providers schema -json > schema.json
+  - jq（スキーマJSON解析）
+  - bash validate_template.sh（テンプレート検証）
+  - grep, wc, sort等の読み取り専用コマンド
+- Python, node, npm, npxの実行は禁止（設定でブロック済み）
+- WebSearch / WebFetchは使用禁止
 - 必要な情報は全てプロバイダースキーマとMCPサーバーから取得してください
-- WebSearch/WebFetchは使用禁止です
-- Pythonやnodeの利用は禁止です
-- ファイルを直接上記パスに保存して作業を完了してください
+- ユーザーに確認を求めずに作業を完了してください
 
 フォーマット厳守事項:
 - 全コメントは日本語で記述（英語コメント禁止）
@@ -117,14 +115,20 @@ for i, resource in enumerate(changed_resources):
 Task(
     subagent_type="general-purpose",
     description="Generate {resource} template",
-         prompt="/terraform-aws-annotated-reference {resource} provider_version={version} output_dir=terraform-templat
+    prompt="/terraform-aws-annotated-reference {resource} provider_version={version} output_dir=terraform-template
 
-重要な指示:
-- Claude Codeのsandbox環境において、ユーザーに確認を求めずに作業ができる手段のみで操作を完了してください
+ツール使用ルール（厳守）:
+- ファイルの作成・編集は必ずWriteツールまたはEditツールを使用すること
+- Bashでのリダイレクト（>, >>）、tee、heredocによるファイル書き込みは禁止（フックでブロックされる）
+- Bashツールの使用は以下の用途のみに限定:
+  - terraform init / terraform providers schema -json > schema.json
+  - jq（スキーマJSON解析）
+  - bash validate_template.sh（テンプレート検証）
+  - grep, wc, sort等の読み取り専用コマンド
+- Python, node, npm, npxの実行は禁止（設定でブロック済み）
+- WebSearch / WebFetchは使用禁止
 - 必要な情報は全てプロバイダースキーマとMCPサーバーから取得してください
-- WebSearch/WebFetchは使用禁止です
-- Pythonやnodeの利用は禁止です
-- ファイルを直接上記パスに保存して作業を完了してください
+- ユーザーに確認を求めずに作業を完了してください
 
 フォーマット厳守事項:
 - 全コメントは日本語で記述（英語コメント禁止）

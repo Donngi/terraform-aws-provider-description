@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash .claude/skills/terraform-aws-annotated-reference/lib/validate_template.sh *)",
+      "Bash(bash .claude/skills/terraform-aws-annotated-reference/lib/validate_template.sh:*)"
+    ],
+    "deny": [
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(node *)",
+      "Bash(npm *)",
+      "Bash(npx *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-bash-command.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
