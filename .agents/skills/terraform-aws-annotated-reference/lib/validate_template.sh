@@ -126,7 +126,8 @@ fi
 # [6] 使用例セクション不在
 # --------------------------------------------------------------------------
 example_patterns=()
-if grep -qiE '^\s*#.*EXAMPLE' "$TEMPLATE"; then
+# セクションヘッダーとしてのEXAMPLEのみ検出（example.comやリソース名"example"は除外）
+if grep -qiE '^#\s*(EXAMPLE|Example Usage|Example Configuration)' "$TEMPLATE"; then
   example_patterns+=("EXAMPLE")
 fi
 if grep -q '使用例' "$TEMPLATE"; then
@@ -135,7 +136,7 @@ if grep -q '使用例' "$TEMPLATE"; then
     example_patterns+=("使用例")
   fi
 fi
-grep -q 'ベストプラクティス' "$TEMPLATE" && example_patterns+=("ベストプラクティス")
+grep -qE '^#\s*ベストプラクティス' "$TEMPLATE" && example_patterns+=("ベストプラクティス")
 
 if [ ${#example_patterns[@]} -gt 0 ]; then
   record_fail "FR-7" "使用例/ベストプラクティスセクションが検出されました: ${example_patterns[*]}"
