@@ -173,6 +173,7 @@ resource "aws_cloudwatch_log_group" "example" {
   #   {機能の簡単な説明}
   #   - {公式ドキュメントのURL}
   # 注意: {注意事項}（必要な場合のみ）
+  # 参考: {AWS公式ドキュメントへのリンク。パラメータに関連する機能の説明、上記内容の確認元等を記載}
   property_name = "value"
 ```
 
@@ -210,3 +211,56 @@ resource "aws_cloudwatch_log_group" "example" {
 
 - `computed: true` かつ `optional` がない属性
 - 例: `arn`, `id`, `tags_all`
+
+## 禁止パターン（Anti-patterns）
+
+以下のパターンはフォーマット違反。validate_template.shで自動検出される。
+
+❌ **英語コメント**
+```hcl
+# Description: The name of the log group.
+# Valid values: 1-512 character string
+# Default: Terraform generates a random unique name.
+```
+
+❌ **==== 区切り線**
+```hcl
+# ============================================================
+# REQUIRED ARGUMENTS
+# ============================================================
+```
+
+❌ **英語プレフィックス（Description: / Valid values: / Default: / Type:）**
+```hcl
+# Type: string
+# Description: ...
+# Default: null
+```
+
+❌ **Required/Optionalグルーピング**
+```hcl
+# ============================================================
+# REQUIRED ARGUMENTS
+# ============================================================
+
+# ============================================================
+# OPTIONAL ARGUMENTS
+# ============================================================
+```
+
+❌ **Attributes Reference内のコード例**
+```hcl
+# output "log_group_arn" {
+#   value = aws_cloudwatch_log_group.example.arn
+# }
+```
+
+❌ **使用例・ベストプラクティスセクション**
+```hcl
+#---------------------------------------------------------------
+# 使用例
+#---------------------------------------------------------------
+# resource "aws_cloudwatch_log_group" "basic" {
+#   ...
+# }
+```
