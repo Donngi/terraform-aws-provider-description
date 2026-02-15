@@ -1,323 +1,256 @@
-#########################################################################################
-# AWS CloudFormation StackSet
+#-------------------------------------------------------------------------------------------------------
+# リソース: aws_cloudformation_stack_set
 # Provider Version: 6.28.0
-# Generated: 2026-02-11
+# Generated: 2026-02-12
+#-------------------------------------------------------------------------------------------------------
+# 用途: CloudFormation StackSetの管理
+#   - 複数のAWSアカウント・リージョンにわたってCloudFormationテンプレートをデプロイ
+#   - SERVICE_MANAGED（AWS Organizations連携）またはSELF_MANAGED（手動）の権限モデルをサポート
+#   - スタックセットインスタンス（aws_cloudformation_stack_set_instance）と組み合わせて使用
 #
-# CloudFormation StackSetを管理し、複数のアカウントやリージョンにスタックを一括デプロイします
+# NOTE: テンプレートパラメータ（Defaultを持つものを含む）は全て明示的に設定するか、lifecycle.ignore_changesで無視する必要がある
+# NOTE: NoEchoパラメータは必ずlifecycle.ignore_changesで無視すること
+# NOTE: DELEGATED_ADMIN使用時は、IAMユーザー/ロールにorganizations:ListDelegatedAdministrators権限が必要
+# NOTE: template_bodyとtemplate_urlは排他的（どちらか一方のみ指定可能）
+# NOTE: タグは最大50個まで設定可能
 #
-# 主な機能:
-# - 複数アカウント・リージョンへのスタック一括デプロイ
-# - セルフマネージド/サービスマネージド権限モデル
-# - 自動デプロイメント設定
-# - 同時実行・失敗許容の操作設定
+# 関連リソース:
+#   - aws_cloudformation_stack_set_instance: スタックセットのインスタンス（デプロイ先）
+#   - aws_iam_role: 管理者ロール・実行ロールの定義
+#   - aws_organizations_organization: SERVICE_MANAGED権限モデル使用時
 #
-# NOTE: Default値を持つパラメータも含め全てのテンプレートパラメータを設定するか
-#       lifecycle ignore_changesで無視すること
-# NOTE: NoEchoパラメータは必ずlifecycle ignore_changesで無視すること
-# NOTE: DELEGATED_ADMIN使用時はorganizations:ListDelegatedAdministrators権限が必要
-#
-# ドキュメント: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudformation_stack_set
-#########################################################################################
+# 公式ドキュメント:
+#   https://registry.terraform.io/providers/hashicorp/aws/6.28.0/docs/resources/cloudformation_stack_set
+#   https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html
+#-------------------------------------------------------------------------------------------------------
 
-#-------
-# 基本設定
-#-------
-
-# StackSet名（必須）
-# 設定内容: StackSetの一意な名前
-# 制約事項: リージョン内で一意、英数字とハイフンのみ、先頭は英字、最大128文字
-variable "stack_set_name" {
-  type    = string
-  default = "example-stackset"
-}
-
-# StackSet説明
-# 設定内容: StackSetの説明文
-variable "stack_set_description" {
-  type    = string
-  default = null
-}
-
-# テンプレート本文
-# 設定内容: CloudFormationテンプレートのJSON/YAML文字列
-# 制約事項: 最大51,200バイト、template_urlとは排他
-variable "template_body" {
-  type    = string
-  default = null
-}
-
-# テンプレートURL
-# 設定内容: S3バケットに保存されたCloudFormationテンプレートのURL
-# 制約事項: 最大460,800バイト、template_bodyとは排他
-variable "template_url" {
-  type    = string
-  default = null
-}
-
-# テンプレートパラメータ
-# 設定内容: CloudFormationテンプレートに渡すパラメータのキーバリューマップ
-# 注意事項: Default値を持つパラメータも含め全てのパラメータを設定するか、lifecycle ignore_changesで無視すること
-# 注意事項: NoEchoパラメータは必ずlifecycle ignore_changesで無視すること
-variable "template_parameters" {
-  type    = map(string)
-  default = {}
-}
-
-#-------
-# 権限設定
-#-------
-
-# 権限モデル
-# 設定内容: IAMロールの作成方法を指定
-# 設定可能な値: SELF_MANAGED（手動でロール作成）, SERVICE_MANAGED（AWS Organizations管理）
-# 省略時: SELF_MANAGED
-variable "permission_model" {
-  type    = string
-  default = "SELF_MANAGED"
-}
-
-# 管理ロールARN
-# 設定内容: 管理アカウントのIAMロールARN
-# 適用条件: SELF_MANAGED権限モデル使用時に必須
-variable "administration_role_arn" {
-  type    = string
-  default = null
-}
-
-# 実行ロール名
-# 設定内容: ターゲットアカウントのIAMロール名
-# 省略時: SELF_MANAGEDの場合はAWSCloudFormationStackSetExecutionRole
-# 注意事項: SERVICE_MANAGED使用時は設定しないこと
-variable "execution_role_name" {
-  type    = string
-  default = null
-}
-
-# 呼び出し元の種類
-# 設定内容: 管理アカウント管理者または委任管理者としての実行を指定
-# 設定可能な値: SELF（管理アカウント）, DELEGATED_ADMIN（委任管理者）
-# 省略時: SELF
-# 注意事項: DELEGATED_ADMIN使用時はorganizations:ListDelegatedAdministrators権限が必要
-variable "call_as" {
-  type    = string
-  default = "SELF"
-}
-
-# Capabilities
-# 設定内容: StackSetに必要なIAM機能のリスト
-# 設定可能な値: CAPABILITY_IAM, CAPABILITY_NAMED_IAM, CAPABILITY_AUTO_EXPAND
-variable "capabilities" {
-  type    = set(string)
-  default = []
-}
-
-#-------
-# 自動デプロイメント設定
-#-------
-
-# 自動デプロイメント有効化
-# 設定内容: 新しいアカウントが組織に追加された際の自動デプロイを有効化
-# 適用条件: SERVICE_MANAGED権限モデル使用時のみ
-variable "auto_deployment_enabled" {
-  type    = bool
-  default = null
-}
-
-# アカウント削除時のスタック保持
-# 設定内容: アカウントが組織から削除された際にスタックを保持するか
-# 適用条件: SERVICE_MANAGED権限モデルかつauto_deployment有効時
-variable "auto_deployment_retain_stacks" {
-  type    = bool
-  default = null
-}
-
-#-------
-# 操作設定
-#-------
-
-# 失敗許容数
-# 設定内容: リージョンごとに許容される操作失敗アカウント数
-# 制約事項: failure_tolerance_percentageとは排他
-variable "operation_failure_tolerance_count" {
-  type    = number
-  default = null
-}
-
-# 失敗許容率
-# 設定内容: リージョンごとに許容される操作失敗アカウント割合（%）
-# 制約事項: failure_tolerance_countとは排他
-variable "operation_failure_tolerance_percentage" {
-  type    = number
-  default = null
-}
-
-# 最大同時実行数
-# 設定内容: 同時に操作を実行する最大アカウント数
-# 制約事項: max_concurrent_percentageとは排他
-variable "operation_max_concurrent_count" {
-  type    = number
-  default = null
-}
-
-# 最大同時実行率
-# 設定内容: 同時に操作を実行する最大アカウント割合（%）
-# 制約事項: max_concurrent_countとは排他
-variable "operation_max_concurrent_percentage" {
-  type    = number
-  default = null
-}
-
-# リージョン同時実行タイプ
-# 設定内容: リージョン間の操作実行方法
-# 設定可能な値: SEQUENTIAL（順次実行）, PARALLEL（並列実行）
-variable "operation_region_concurrency_type" {
-  type    = string
-  default = null
-}
-
-# リージョン実行順序
-# 設定内容: スタック操作を実行するリージョンの順序リスト
-variable "operation_region_order" {
-  type    = list(string)
-  default = []
-}
-
-#-------
-# マネージド実行設定
-#-------
-
-# マネージド実行の有効化
-# 設定内容: 競合しない操作の同時実行と競合操作のキューイングを有効化
-# 省略時: false
-variable "managed_execution_active" {
-  type    = bool
-  default = null
-}
-
-#-------
-# リソース管理設定
-#-------
-
-# リージョン
-# 設定内容: リソースを管理するAWSリージョン
-# 省略時: プロバイダー設定のリージョン
-variable "region" {
-  type    = string
-  default = null
-}
-
-# タグ
-# 設定内容: StackSetおよび作成されるスタックに関連付けるタグのキーバリューマップ
-# 制約事項: 最大50タグ
-# 注意事項: サポートされるリソースにも伝播される
-variable "tags" {
-  type    = map(string)
-  default = {}
-}
-
-#-------
-# タイムアウト設定
-#-------
-
-# 更新タイムアウト
-# 設定内容: StackSet更新操作のタイムアウト時間
-# 設定形式: "30m"（分）、"1h"（時間）など
-variable "update_timeout" {
-  type    = string
-  default = null
-}
-
-#########################################################################################
-# リソース定義
-#########################################################################################
-
-resource "aws_cloudformation_stack_set" "this" {
-  #-------
+resource "aws_cloudformation_stack_set" "example" {
+  #-------------------------------------------------------------------------------------------------------
   # 基本設定
-  #-------
-  name        = var.stack_set_name
-  description = var.stack_set_description
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: スタックセット名（アカウント・リージョン内で一意）
+  # 設定可能な値: 英数字とハイフン、先頭は英字、最大128文字
+  name = "my-stack-set"
 
-  #-------
+  # 設定内容: スタックセットの説明
+  # 省略時: 説明なし
+  description = "Multi-account VPC deployment stack set"
+
+  #-------------------------------------------------------------------------------------------------------
   # テンプレート設定
-  #-------
-  template_body = var.template_body
-  template_url  = var.template_url
-  parameters    = var.template_parameters
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: CloudFormationテンプレート本体（JSON/YAML形式の文字列）
+  # 設定可能な値: 最大51,200バイト
+  # 省略時: template_urlを使用する場合は省略可
+  # 注意: template_urlと排他的（どちらか一方のみ指定）
+  template_body = jsonencode({
+    Parameters = {
+      VPCCidr = {
+        Type        = "String"
+        Default     = "10.0.0.0/16"
+        Description = "VPC CIDR block"
+      }
+    }
+    Resources = {
+      MyVPC = {
+        Type = "AWS::EC2::VPC"
+        Properties = {
+          CidrBlock = { Ref = "VPCCidr" }
+          Tags = [
+            {
+              Key   = "Name"
+              Value = "StackSet-VPC"
+            }
+          ]
+        }
+      }
+    }
+  })
 
-  #-------
+  # 設定内容: S3に配置したテンプレートファイルのURL
+  # 設定可能な値: S3バケットURL、最大460,800バイト
+  # 省略時: template_bodyを使用する場合は省略可
+  # 注意: template_bodyと排他的（どちらか一方のみ指定）
+  template_url = null
+
+  # 設定内容: テンプレートパラメータの値（キー・バリューマップ）
+  # 省略時: パラメータなし
+  # 注意: Defaultを持つパラメータも含め、全て明示的に設定するか、lifecycle.ignore_changesで無視すること
+  # 注意: NoEchoパラメータは必ずlifecycle.ignore_changesで無視すること
+  parameters = {
+    VPCCidr = "10.1.0.0/16"
+  }
+
+  #-------------------------------------------------------------------------------------------------------
   # 権限設定
-  #-------
-  permission_model        = var.permission_model
-  administration_role_arn = var.administration_role_arn
-  execution_role_name     = var.execution_role_name
-  call_as                 = var.call_as
-  capabilities            = var.capabilities
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: IAM権限モデルの種類
+  # 設定可能な値: SELF_MANAGED（デフォルト、手動管理）、SERVICE_MANAGED（AWS Organizations連携）
+  # 省略時: SELF_MANAGED
+  permission_model = "SELF_MANAGED"
 
-  #-------
-  # 自動デプロイメント設定（SERVICE_MANAGED権限モデル時のみ）
-  #-------
-  auto_deployment {
-    enabled                          = var.auto_deployment_enabled
-    retain_stacks_on_account_removal = var.auto_deployment_retain_stacks
-  }
+  # 設定内容: 管理者アカウントのIAMロールARN
+  # 省略時: なし
+  # 注意: SELF_MANAGED権限モデルの場合は必須
+  # 注意: SERVICE_MANAGED権限モデルの場合は指定不可
+  administration_role_arn = "arn:aws:iam::123456789012:role/AWSCloudFormationStackSetAdministrationRole"
 
-  #-------
+  # 設定内容: ターゲットアカウントのIAM実行ロール名
+  # 設定可能な値: IAMロール名
+  # 省略時: SELF_MANAGEDの場合はAWSCloudFormationStackSetExecutionRole
+  # 注意: SELF_MANAGED権限モデルでのみ使用
+  # 注意: SERVICE_MANAGED権限モデルの場合は指定しないこと
+  execution_role_name = "AWSCloudFormationStackSetExecutionRole"
+
+  # 設定内容: 呼び出し元の権限種別
+  # 設定可能な値: SELF（デフォルト、管理アカウント）、DELEGATED_ADMIN（委任管理者）
+  # 省略時: SELF
+  # 注意: DELEGATED_ADMIN使用時はorganizations:ListDelegatedAdministrators権限が必要
+  call_as = "SELF"
+
+  #-------------------------------------------------------------------------------------------------------
+  # 機能設定
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: テンプレートで必要なIAM機能の宣言
+  # 設定可能な値: CAPABILITY_IAM、CAPABILITY_NAMED_IAM、CAPABILITY_AUTO_EXPAND
+  # 省略時: 機能宣言なし
+  # 注意: IAMリソースを作成する場合は必須
+  capabilities = ["CAPABILITY_IAM"]
+
+  #-------------------------------------------------------------------------------------------------------
+  # 自動デプロイ設定（SERVICE_MANAGEDモードのみ）
+  #-------------------------------------------------------------------------------------------------------
+  # auto_deployment {
+  #   # 設定内容: 自動デプロイの有効化
+  #   # 設定可能な値: true、false
+  #   # 省略時: false
+  #   # 注意: SERVICE_MANAGED権限モデルでのみ使用可能
+  #   enabled = true
+  #
+  #   # 設定内容: アカウント削除時のスタック保持
+  #   # 設定可能な値: true（保持）、false（削除）
+  #   # 省略時: false
+  #   retain_stacks_on_account_removal = false
+  # }
+
+  #-------------------------------------------------------------------------------------------------------
+  # 実行管理設定
+  #-------------------------------------------------------------------------------------------------------
+  # managed_execution {
+  #   # 設定内容: 非競合操作の同時実行と競合操作のキューイング
+  #   # 設定可能な値: true（有効）、false（無効）
+  #   # 省略時: false
+  #   # 注意: trueの場合、非競合操作は同時実行され、競合操作はキューに入る
+  #   active = false
+  # }
+
+  #-------------------------------------------------------------------------------------------------------
   # 操作設定
-  #-------
-  operation_preferences {
-    failure_tolerance_count      = var.operation_failure_tolerance_count
-    failure_tolerance_percentage = var.operation_failure_tolerance_percentage
-    max_concurrent_count         = var.operation_max_concurrent_count
-    max_concurrent_percentage    = var.operation_max_concurrent_percentage
-    region_concurrency_type      = var.operation_region_concurrency_type
-    region_order                 = var.operation_region_order
+  #-------------------------------------------------------------------------------------------------------
+  # operation_preferences {
+  #   # 設定内容: リージョンごとの許容失敗アカウント数
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: なし
+  #   # 注意: failure_tolerance_percentageと排他的
+  #   # failure_tolerance_count = 1
+  #
+  #   # 設定内容: リージョンごとの許容失敗アカウント割合（%）
+  #   # 設定可能な値: 0〜100
+  #   # 省略時: なし
+  #   # 注意: failure_tolerance_countと排他的
+  #   # failure_tolerance_percentage = 10
+  #
+  #   # 設定内容: 同時実行する最大アカウント数
+  #   # 設定可能な値: 1以上の整数
+  #   # 省略時: なし
+  #   # 注意: max_concurrent_percentageと排他的
+  #   # max_concurrent_count = 5
+  #
+  #   # 設定内容: 同時実行する最大アカウント割合（%）
+  #   # 設定可能な値: 1〜100
+  #   # 省略時: なし
+  #   # 注意: max_concurrent_countと排他的
+  #   # max_concurrent_percentage = 20
+  #
+  #   # 設定内容: リージョン間デプロイの同時実行モード
+  #   # 設定可能な値: SEQUENTIAL（順次）、PARALLEL（並列）
+  #   # 省略時: SEQUENTIAL
+  #   # region_concurrency_type = "SEQUENTIAL"
+  #
+  #   # 設定内容: スタック操作を実行するリージョンの順序
+  #   # 設定可能な値: リージョンコードのリスト
+  #   # 省略時: なし
+  #   # region_order = ["us-east-1", "eu-west-1", "ap-northeast-1"]
+  # }
+
+  #-------------------------------------------------------------------------------------------------------
+  # リソース配置設定
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: このリソースを管理するAWSリージョン
+  # 省略時: プロバイダー設定のリージョン
+  region = "us-east-1"
+
+  #-------------------------------------------------------------------------------------------------------
+  # タグ設定
+  #-------------------------------------------------------------------------------------------------------
+  # 設定内容: スタックセットとそこから作成されるスタックに適用するタグ
+  # 省略時: タグなし
+  # 注意: 最大50個まで設定可能
+  # 注意: サポートされているリソースにはタグが伝播される
+  tags = {
+    Environment = "production"
+    ManagedBy   = "terraform"
+    Purpose     = "multi-account-vpc"
   }
 
-  #-------
-  # マネージド実行設定
-  #-------
-  managed_execution {
-    active = var.managed_execution_active
-  }
-
-  #-------
-  # リソース管理設定
-  #-------
-  region = var.region
-  tags   = var.tags
-
-  #-------
+  #-------------------------------------------------------------------------------------------------------
   # タイムアウト設定
-  #-------
-  timeouts {
-    update = var.update_timeout
-  }
+  #-------------------------------------------------------------------------------------------------------
+  # timeouts {
+  #   # 設定内容: 更新操作のタイムアウト時間
+  #   # 設定可能な値: 時間文字列（例: "30m", "1h"）
+  #   # 省略時: デフォルトタイムアウト
+  #   update = "30m"
+  # }
+
+  #-------------------------------------------------------------------------------------------------------
+  # ライフサイクル管理
+  #-------------------------------------------------------------------------------------------------------
+  # lifecycle {
+  #   # NoEchoパラメータやDefaultパラメータを持つ場合の設定例
+  #   ignore_changes = [
+  #     parameters["SensitiveParam"],  # NoEchoパラメータは必ず無視
+  #   ]
+  # }
 }
 
-#########################################################################################
+#-------------------------------------------------------------------------------------------------------
 # Attributes Reference（参照可能な属性）
-#########################################################################################
-# arn              - StackSetのARN
-# id               - StackSetの名前
-# stack_set_id     - StackSetの一意な識別子
-# tags_all         - プロバイダーdefault_tags含む全タグのマップ
+#-------------------------------------------------------------------------------------------------------
+# arn              - スタックセットのARN
+# id               - スタックセット名（nameと同じ）
+# stack_set_id     - スタックセットの一意識別子
+# tags_all         - プロバイダーdefault_tags含む全てのタグ
 
-#########################################################################################
-# 出力例
-#########################################################################################
-
-output "stack_set_arn" {
-  description = "StackSetのARN"
-  value       = aws_cloudformation_stack_set.this.arn
-}
-
-output "stack_set_id" {
-  description = "StackSetの一意な識別子"
-  value       = aws_cloudformation_stack_set.this.stack_set_id
-}
-
-output "stack_set_name" {
-  description = "StackSetの名前"
-  value       = aws_cloudformation_stack_set.this.id
-}
+#-------------------------------------------------------------------------------------------------------
+# Outputs（出力例）
+#-------------------------------------------------------------------------------------------------------
+# output "stack_set_arn" {
+#   description = "スタックセットのARN"
+#   value       = aws_cloudformation_stack_set.example.arn
+# }
+#
+# output "stack_set_id" {
+#   description = "スタックセットの一意識別子"
+#   value       = aws_cloudformation_stack_set.example.stack_set_id
+# }
+#
+# output "stack_set_name" {
+#   description = "スタックセット名（IDと同じ）"
+#   value       = aws_cloudformation_stack_set.example.id
+# }
+#
+# output "stack_set_tags_all" {
+#   description = "プロバイダーのdefault_tagsを含む全てのタグ"
+#   value       = aws_cloudformation_stack_set.example.tags_all
+# }

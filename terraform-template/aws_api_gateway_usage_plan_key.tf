@@ -1,21 +1,25 @@
 #---------------------------------------------------------------
-# API Gateway 使用量プランキー
+# AWS API Gateway Usage Plan Key
 #---------------------------------------------------------------
 #
-# API Gateway の使用量プランに API キーを関連付けるリソースです。
-# 使用量プランは API へのアクセスを管理し、スロットリング制限やクォータを
-# 設定します。API キーを使用量プランに関連付けることで、その API キーを
-# 使用するクライアントに対して使用量プランで定義された制限が適用されます。
+# Amazon API GatewayのUsage Plan Key (使用量プランキー) をプロビジョニングするリソースです。
+# 既存のAPIキーを使用量プランに関連付けることで、そのAPIキーに対して
+# 使用量プランで定義されたスロットリング制限やクォータ制限を適用します。
 #
-# 注意事項:
-# - API キーは各ステージごとに 1 つの使用量プランにのみ関連付けることが
-#   できます。
-# - 使用量プランへの API キーの追加後、更新操作が完了するまで数分かかる
-#   場合があります。
+# 主な機能:
+#   - 既存のAPIキーを使用量プランに関連付け
+#   - APIキーごとに異なる使用量制限を適用
+#   - 複数の顧客やアプリケーションごとにAPI利用を管理
+#
+# 制限事項:
+#   - APIキーは、各APIステージにつき1つの使用量プランにのみ関連付け可能
+#   - key_typeは現在「API_KEY」のみサポート
+#   - 使用量プランとAPIキーは事前に作成されている必要がある
 #
 # AWS公式ドキュメント:
-#   - 使用量プランの作成: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-usage-plans.html
+#   - 使用量プランの設定: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-usage-plans.html
 #   - CreateUsagePlanKey API: https://docs.aws.amazon.com/apigateway/latest/api/API_CreateUsagePlanKey.html
+#   - 使用量プランとAPIキー: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_usage_plan_key
@@ -29,34 +33,37 @@
 #---------------------------------------------------------------
 
 resource "aws_api_gateway_usage_plan_key" "example" {
-
-  #---------------------------------------------------------------
-  # 必須設定
-  #---------------------------------------------------------------
+  #-------------------------------------------------------------
+  # 基本設定
+  #-------------------------------------------------------------
 
   # usage_plan_id (Required)
-  # 設定内容: API キーを関連付ける使用量プランの ID を指定します。
-  # 参照例: aws_api_gateway_usage_plan.main.id
-  usage_plan_id = "usage-plan-id"
+  # 設定内容: APIキーを関連付ける使用量プランのIDを指定します。
+  # 設定可能な値: aws_api_gateway_usage_plan リソースのID
+  # 用途: このIDで識別される使用量プランに、APIキーを関連付けます。
+  usage_plan_id = aws_api_gateway_usage_plan.example.id
 
   # key_id (Required)
-  # 設定内容: 使用量プランに関連付ける API キーの ID を指定します。
-  # 参照例: aws_api_gateway_api_key.main.id
-  key_id = "api-key-id"
+  # 設定内容: 使用量プランに関連付けるAPIキーのIDを指定します。
+  # 設定可能な値: aws_api_gateway_api_key リソースのID
+  # 用途: このAPIキーに対して、使用量プランで定義されたスロットリングやクォータが適用されます。
+  key_id = aws_api_gateway_api_key.example.id
 
   # key_type (Required)
-  # 設定内容: API キーリソースのタイプを指定します。
+  # 設定内容: 関連付けるキーのタイプを指定します。
   # 設定可能な値: API_KEY（現在サポートされている唯一のタイプ）
+  # 用途: 使用量プランに関連付けるキーの種類を識別します。
   key_type = "API_KEY"
 
-  #---------------------------------------------------------------
-  # オプション設定
-  #---------------------------------------------------------------
+  #-------------------------------------------------------------
+  # リージョン設定
+  #-------------------------------------------------------------
 
-  # region (Optional, Computed)
-  # 設定内容: このリソースを管理する AWS リージョンを指定します。
-  # 省略時: プロバイダー設定のリージョンを使用します。
-  # 用途: マルチリージョン構成でリソースごとにリージョンを指定する場合に使用します。
+  # region (Optional)
+  # 設定内容: このリソースを管理するAWSリージョンを指定します。
+  # 設定可能な値: 有効なAWSリージョンコード（例: ap-northeast-1, us-east-1, us-west-2）
+  # 省略時: プロバイダー設定で指定されたリージョンが使用されます。
+  # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   region = null
 }
 
@@ -65,10 +72,12 @@ resource "aws_api_gateway_usage_plan_key" "example" {
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - id: 使用量プランキーの ID
-# - key_id: API Gateway キーリソースの ID
-# - key_type: 使用量プランキーのタイプ（現在は API_KEY のみ）
-# - usage_plan_id: API リソースの ID
+# - id: 使用量プランキーのID
+#
 # - name: 使用量プランキーの名前
+#       使用量プランに関連付けられたAPIキーの名前が自動的に設定されます。
+#
 # - value: 使用量プランキーの値
+#         使用量プランに関連付けられたAPIキーの実際の値（APIキー文字列）が自動的に設定されます。
+#         この値はセキュリティ上の理由から慎重に扱う必要があります。
 #---------------------------------------------------------------

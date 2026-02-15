@@ -1,0 +1,10 @@
+{
+  "format_version": "1.0",
+  "last_processed": {
+    "version": "6.28.0",
+    "timestamp": "2026-01-28T00:00:00Z",
+    "total_resources": 1593,
+    "processed_resources": 558,
+    "schema_checksum": "0a1d3f749d86737e0311e301510d8c043c4181347f3c699883203e8a58e00df3"
+  }
+}

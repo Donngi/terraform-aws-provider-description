@@ -1,14 +1,23 @@
 #---------------------------------------------------------------
-# AWS Bedrock AgentCore Token Vault CMK
+# Amazon Bedrock AgentCore Token Vault カスタマー管理キー
 #---------------------------------------------------------------
 #
-# Bedrock AgentのトークンボールトのKMS暗号化キー（CMK）を管理するリソースです。
-# トークンボールトは、OAuth2認証情報やAPIキーなどの機密情報を
-# 安全に保存するためのセキュアストレージで、このリソースはその暗号化設定を管理します。
+# Amazon Bedrock AgentCore Identity のトークンボルトに対する
+# カスタマー管理キー(CMK)を設定します。
+#
+# デフォルトでは、Bedrock はトークンボルトのデータを AWS 所有キーで暗号化しますが、
+# このリソースを使用することで、カスタマー管理キーによる暗号化を有効化できます。
+# CMK を使用することで、キーポリシー、キーローテーション、削除などを
+# お客様側で管理できるようになります。
+#
+# 注意事項:
+# - Bedrock AgentCore のトークンボルト暗号化は単一リージョンの対称 KMS キーのみをサポート
+# - マルチリージョンキーおよび非対称キーは使用不可
+# - キーエイリアスでの設定は不可（KMS キー ARN のみ使用可能）
 #
 # AWS公式ドキュメント:
-#   - Token Vaults概要: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/token-vaults.html
-#   - セキュリティ設定: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/security.html
+#   - Data encryption: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-data-encryption.html
+#   - SetTokenVaultCMK API: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_SetTokenVaultCMK.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_token_vault_cmk
@@ -23,72 +32,60 @@
 
 resource "aws_bedrockagentcore_token_vault_cmk" "example" {
   #-------------------------------------------------------------
-  # トークンボールト設定
+  # トークンボルト識別設定
   #-------------------------------------------------------------
 
-  # token_vault_id (Optional)
-  # 設定内容: トークンボールトの一意な識別子を指定します。
-  # 設定可能な値: 文字列
-  # 省略時: "default" が使用されます
-  # 注意: デフォルトのトークンボールトを使用する場合は省略可能です。
-  token_vault_id = null
+  # token_vault_id (Optional, Computed)
+  # 設定内容: カスタマー管理キーを設定するトークンボルトの一意な識別子
+  # 制約: 1～64 文字の英数字、ハイフン、アンダースコア（パターン: [a-zA-Z0-9\-_]+）
+  # 省略時: デフォルトのトークンボルトが使用されます
+  # 参考: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_SetTokenVaultCMK.html
+  token_vault_id = "my-token-vault"
 
-  # region (Optional)
-  # 設定内容: このリソースを管理するAWSリージョンを指定します。
-  # 設定可能な値: 有効なAWSリージョンコード（例: us-east-1, ap-northeast-1）
+  #-------------------------------------------------------------
+  # リージョン設定
+  #-------------------------------------------------------------
+
+  # region (Optional, Computed)
+  # 設定内容: このリソースが管理されるリージョンを指定します
   # 省略時: プロバイダー設定のリージョンが使用されます
   # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
-  region = null
+  region = "us-east-1"
 
   #-------------------------------------------------------------
-  # KMS暗号化設定（必須）
+  # KMS 暗号化設定
   #-------------------------------------------------------------
 
-  # kms_configuration (Required)
-  # 設定内容: トークンボールトのKMS暗号化設定を指定します。
-  # 注意: トークンボールトのセキュリティに関わる重要な設定です。
+  # kms_configuration (Optional)
+  # 設定内容: トークンボルトの暗号化に使用する AWS KMS キーの設定を定義します
+  # 参考: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_KmsConfiguration.html
   kms_configuration {
     # key_type (Required)
-    # 設定内容: 使用するKMSキーのタイプを指定します。
+    # 設定内容: KMS キーのタイプを指定します
     # 設定可能な値:
-    #   - "CustomerManagedKey": カスタマー管理キー（kms_key_arnの指定が必要）
-    #   - "ServiceManagedKey": サービス管理キー（AWS側で自動管理）
-    # 関連機能: KMS暗号化
-    #   CustomerManagedKeyを選択すると、独自のKMSキーで暗号化を管理でき、
-    #   キーのローテーション、アクセスポリシー、監査ログを制御できます。
+    #   - CustomerManagedKey: お客様が AWS KMS で作成・管理する KMS キー（推奨）
+    #   - ServiceManagedKey: AWS が管理する KMS キー
+    # 注意: CustomerManagedKey を選択した場合は kms_key_arn の指定が必須です
     key_type = "CustomerManagedKey"
 
     # kms_key_arn (Optional)
-    # 設定内容: カスタマー管理キーを使用する場合のKMSキーのARNを指定します。
-    # 設定可能な値: 有効なKMSキーARN
-    # 省略時: key_typeが"ServiceManagedKey"の場合は不要
-    # 注意: key_typeが"CustomerManagedKey"の場合は必須です。
-    # 関連機能: カスタム暗号化
-    #   KMSキーのポリシーでbedrock-agentcore.amazonaws.comによる
-    #   暗号化/復号化を許可する必要があります。
+    # 設定内容: カスタマー管理キーの Amazon Resource Name (ARN) を指定します
+    # 制約:
+    #   - 1～2048 文字
+    #   - 形式: arn:aws:kms:<region>:<account-id>:key/<key-id>
+    #   - 単一リージョンの対称 KMS キーのみサポート
+    #   - マルチリージョンキー・非対称キー・キーエイリアスは使用不可
+    # 省略時: key_type が ServiceManagedKey の場合のみ省略可能
+    # 注意: key_type が CustomerManagedKey の場合は必須です
+    # 参考: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-data-encryption.html
     kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
   }
 }
 
 #---------------------------------------------------------------
-# Attributes Reference (読み取り専用属性)
+# Attributes Reference
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - id: リソースID（token_vault_id,region形式）
-#
-# - token_vault_id: トークンボールトの識別子
-#
+# - token_vault_id: トークンボルトの一意な識別子
 # - region: リソースが管理されているリージョン
-#
-# - kms_configuration: KMS設定の詳細
-#   - key_type: 設定されたKMSキータイプ
-#   - kms_key_arn: 設定されたKMSキーARN（CustomerManagedKeyの場合）
-#
-#---------------------------------------------------------------
-# 削除時の注意事項
-#---------------------------------------------------------------
-# このリソースを削除した場合、Terraformの状態からのみ削除され、
-# 実際のトークンボールトのCMK設定は変更されません。
-# 実際のKMS設定を変更する場合は、AWSコンソールまたはAWS CLIを使用してください。
-#---------------------------------------------------------------

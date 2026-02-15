@@ -8,8 +8,8 @@
 # 可能で、各アプリケーションはそのルールのみを実行します。
 #
 # AWS公式ドキュメント:
-#   - Chime SDK SIP Rules: https://docs.aws.amazon.com/chime-sdk/latest/ag/sip-rules.html
-#   - Chime SDK Voice: https://docs.aws.amazon.com/chime-sdk/latest/dg/what-is-chime-sdk.html
+#   - Chime SDK SIP Rules: https://docs.aws.amazon.com/chime-sdk/latest/ag/create-sip-rule.html
+#   - Chime SDK API Reference: https://docs.aws.amazon.com/chime-sdk/latest/APIReference/API_voice-chime_CreateSipRule.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/chimesdkvoice_sip_rule
@@ -24,94 +24,94 @@
 
 resource "aws_chimesdkvoice_sip_rule" "example" {
   #-------------------------------------------------------------
-  # 基本設定 (必須)
+  # 基本設定
   #-------------------------------------------------------------
 
-  # name (Required)
-  # 設定内容: SIPルールの名前を指定します。
+  # 設定内容: SIPルールの名前
   # 設定可能な値: 任意の文字列
-  # 注意: ルールを識別するための名前として使用されます。
-  name = "example-sip-rule"
+  # 省略時: 設定不可（必須）
+  name = "my-sip-rule"
 
-  # trigger_type (Required)
-  # 設定内容: SIPルールがトリガーされる条件のタイプを指定します。
+  # 設定内容: トリガータイプ
   # 設定可能な値:
-  #   - RequestUriHostname: リクエストURIホスト名に基づくトリガー
-  #   - ToPhoneNumber: 着信先電話番号に基づくトリガー
-  # 注意: trigger_valueの値はこのタイプに対応している必要があります。
-  trigger_type = "RequestUriHostname"
+  #   - ToPhoneNumber: 電話番号をトリガーとして使用
+  #   - RequestUriHostname: Request URIホスト名をトリガーとして使用
+  # 省略時: 設定不可（必須）
+  trigger_type = "ToPhoneNumber"
 
-  # trigger_value (Required)
-  # 設定内容: トリガータイプに対応する具体的な値を指定します。
+  # 設定内容: トリガー値
   # 設定可能な値:
-  #   - trigger_typeがRequestUriHostnameの場合: Amazon Chime Voice Connectorのアウトバウンドホスト名
-  #   - trigger_typeがToPhoneNumberの場合: E164形式の電話番号（例: +819012345678）
-  # 動作: 着信SIPリクエストのRequest URIまたは"To"ヘッダーがこの値と一致した場合、
-  #       SIPルールに指定されたSIPメディアアプリケーションがトリガーされます。
-  trigger_value = "example-hostname.voiceconnector.chime.aws"
+  #   - ToPhoneNumberの場合: E.164形式の電話番号（例: +819012345678）
+  #   - RequestUriHostnameの場合: ホスト名（例: example.voiceconnector.chime.aws）
+  # 省略時: 設定不可（必須）
+  trigger_value = "+819012345678"
 
   #-------------------------------------------------------------
-  # ターゲットアプリケーション設定 (必須)
+  # ルール制御
   #-------------------------------------------------------------
 
-  # target_applications (Required)
-  # 設定内容: 着信SIPリクエストをルーティングするSIPメディアアプリケーションのリストを指定します。
-  # 注意: 各AWSリージョンごとに1つのSIPアプリケーションのみ使用可能です。
-  #       最小1個、最大25個まで設定できます。
+  # 設定内容: SIPルールを無効化するかどうか
+  # 設定可能な値:
+  #   - true: ルールを無効化（トリガーされない）
+  #   - false: ルールを有効化（トリガーされる）
+  # 省略時: false（ルールは有効）
+  disabled = false
+
+  #-------------------------------------------------------------
+  # リージョン設定
+  #-------------------------------------------------------------
+
+  # 設定内容: リソースが管理されるAWSリージョン
+  # 設定可能な値: AWSリージョンコード（例: us-east-1, ap-northeast-1）
+  # 省略時: プロバイダー設定のリージョンを使用
+  region = "us-east-1"
+
+  #-------------------------------------------------------------
+  # ターゲットアプリケーション設定
+  #-------------------------------------------------------------
+
+  # 設定内容: SIPメディアアプリケーションのルーティング設定
+  # 設定可能な値: 1～25個のターゲットアプリケーション
+  # 省略時: 設定不可（最低1個必須）
   target_applications {
-    # sip_media_application_id (Required)
-    # 設定内容: ルーティング先のSIPメディアアプリケーションIDを指定します。
-    # 設定可能な値: 有効なSIPメディアアプリケーションのID
-    sip_media_application_id = "example-sma-id"
-
-    # aws_region (Required)
-    # 設定内容: ターゲットアプリケーションが存在するAWSリージョンを指定します。
-    # 設定可能な値: 有効なAWSリージョンコード（例: us-east-1, us-west-2）
-    # 注意: 各リージョンごとに1つのアプリケーションのみ指定可能です。
+    # 設定内容: SIPメディアアプリケーションが配置されているAWSリージョン
+    # 設定可能な値: AWSリージョンコード（例: us-east-1, ap-northeast-1）
+    # 省略時: 設定不可（必須）
     aws_region = "us-east-1"
 
-    # priority (Required)
-    # 設定内容: ターゲットリスト内でのSIPメディアアプリケーションの優先順位を指定します。
-    # 設定可能な値: 数値（整数）
-    # 注意: 数値が小さいほど優先度が高くなります。
+    # 設定内容: SIPメディアアプリケーションID
+    # 設定可能な値: aws_chimesdkvoice_sip_media_applicationのID
+    # 省略時: 設定不可（必須）
+    sip_media_application_id = "abcd1234-5678-90ab-cdef-1234567890ab"
+
+    # 設定内容: アプリケーションの優先度（複数のアプリケーション設定時に使用）
+    # 設定可能な値: 1以上の整数（小さい値ほど優先度が高い）
+    # 省略時: 設定不可（必須）
     priority = 1
   }
 
-  # 複数のターゲットアプリケーションを設定する例（コメントアウト）
+  # 複数のターゲットアプリケーション設定例（冗長性確保）
   # target_applications {
-  #   sip_media_application_id = "example-sma-id-2"
   #   aws_region               = "us-west-2"
+  #   sip_media_application_id = "efgh5678-90ab-cdef-1234-567890abcdef"
   #   priority                 = 2
   # }
 
-  #-------------------------------------------------------------
-  # オプション設定
-  #-------------------------------------------------------------
-
-  # disabled (Optional)
-  # 設定内容: SIPルールを無効化するかどうかを指定します。
-  # 設定可能な値:
-  #   - true: ルールを無効化
-  #   - false: ルールを有効化（デフォルト）
-  # 省略時: false（ルールは有効）
-  # 注意: ルールを削除する前に、必ずtrueに設定して無効化する必要があります。
-  disabled = null
-
-  # region (Optional)
-  # 設定内容: このリソースが管理されるAWSリージョンを指定します。
-  # 設定可能な値: 有効なAWSリージョンコード
-  # 省略時: プロバイダー設定のリージョンが使用されます
-  # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
-  region = null
+  # target_applications {
+  #   aws_region               = "ap-northeast-1"
+  #   sip_media_application_id = "ijkl9012-3456-7890-abcd-ef1234567890"
+  #   priority                 = 3
+  # }
 }
 
 #---------------------------------------------------------------
-# Attributes Reference (読み取り専用属性)
+# Attributes Reference（参照可能な属性）
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - id: SIPルールの一意識別子
+# - id
+#   SIPルールのID（SipRuleIdと同じ値）
 #
-# これらの属性は他のリソースから参照可能:
-#   aws_chimesdkvoice_sip_rule.example.id
+# - region
+#   リソースが管理されているAWSリージョン
 #---------------------------------------------------------------
