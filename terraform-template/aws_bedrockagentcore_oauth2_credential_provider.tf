@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_oauth2_credential_provider
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -309,6 +309,20 @@ resource "aws_bedrockagentcore_oauth2_credential_provider" "example" {
     #   # client_credentials_wo_version = 1
     # }
   }
+
+  #-------------------------------------------------------------
+  # タグ設定
+  #-------------------------------------------------------------
+
+  # tags (Optional)
+  # 設定内容: リソースに割り当てるタグのマップを指定します。
+  # 設定可能な値: キーと値のペアのマップ
+  # 注意: プロバイダーレベルのdefault_tags設定ブロックで定義されたタグと
+  #       一致するキーを持つタグは、プロバイダーレベルで定義されたものを上書きします。
+  tags = {
+    Name        = "example-oauth-provider"
+    Environment = "production"
+  }
 }
 
 #---------------------------------------------------------------
@@ -320,6 +334,9 @@ resource "aws_bedrockagentcore_oauth2_credential_provider" "example" {
 #
 # - client_secret_arn: クライアントシークレットを含むAWS Secrets ManagerシークレットのARN
 #   - secret_arn: AWS Secrets Manager内のシークレットのARN
+#
+# - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
+#             リソースに割り当てられたすべてのタグのマップ
 #
 # 注意: GitHub、Google、Microsoft、Salesforce、Slackの各プロバイダー設定では、
 #       oauth_discoveryはcomputed属性として自動的に設定されます。

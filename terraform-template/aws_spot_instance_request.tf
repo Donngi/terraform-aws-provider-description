@@ -9,17 +9,19 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/spot_instance_request
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-19
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 #
 # NOTE:
 #   - このリソースは「スポットリクエスト」を管理するもので、インスタンス自体の管理はSpotリクエスト経由になります
+#   - AWSはこのリソースが使用するレガシーAPIの使用を非推奨としています。aws_instanceのinstance_market_optionsの使用を推奨します
 #   - wait_for_fulfillment = true にすると、インスタンスが実際に起動するまでapplyがブロックされます
 #   - spot_type = "persistent"の場合、インスタンス中断後に再リクエストされます
 #   - spot_type = "one-time"の場合、インスタンスが中断されると再リクエストされません
 #   - launch_groupを指定すると、同じグループ内のリクエストは一緒に起動・終了します
 #   - user_dataとuser_data_base64は同時に指定できません
 #   - security_groupsはEC2-Classic専用です。VPC環境ではvpc_security_group_idsを使用してください
+#   - network_interfaceブロックはdeprecatedです
 #-----------------------------------------------------------------------
 
 resource "aws_spot_instance_request" "example" {
@@ -173,6 +175,43 @@ resource "aws_spot_instance_request" "example" {
   #   # 設定可能な値: true / false
   #   # 省略時: false
   #   delete_on_termination = false
+  # }
+
+  #-----------------------------------------------------------------------
+  # セカンダリネットワークインターフェース設定
+  #-----------------------------------------------------------------------
+
+  # 設定内容: 起動時にアタッチするセカンダリネットワークインターフェースの設定（複数指定可能）
+  # 省略時: セカンダリネットワークインターフェースはアタッチされない
+  # 備考: 各ネットワークカードに1つのセカンダリインターフェースを持てます。変更時はインスタンスが再作成されます
+  # secondary_network_interface {
+  #   # 設定内容: セカンダリインターフェースを作成するサブネットのID（必須）
+  #   # 設定可能な値: サブネットID（例: subnet-xxxxxxxxxxxxxxxxx）
+  #   secondary_subnet_id = "subnet-xxxxxxxxxxxxxxxxx"
+  #
+  #   # 設定内容: ネットワークカードのインデックス（必須）
+  #   # 設定可能な値: 0以上の整数
+  #   network_card_index = 1
+  #
+  #   # 設定内容: ネットワークインターフェースのデバイスインデックス
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: 0
+  #   device_index = 0
+  #
+  #   # 設定内容: ネットワークインターフェースのタイプ
+  #   # 設定可能な値: "secondary"
+  #   # 省略時: "secondary"
+  #   interface_type = "secondary"
+  #
+  #   # 設定内容: インスタンス終了時にネットワークインターフェースを削除するかどうか
+  #   # 設定可能な値: true / false
+  #   # 省略時: true
+  #   delete_on_termination = true
+  #
+  #   # 設定内容: ネットワークインターフェースに割り当てるプライベートIPアドレスの数
+  #   # 設定可能な値: 1以上の整数
+  #   # 省略時: 1
+  #   private_ip_address_count = 1
   # }
 
   #-----------------------------------------------------------------------
@@ -453,6 +492,12 @@ resource "aws_spot_instance_request" "example" {
     # 設定可能な値: "enabled" / "disabled"
     # 省略時: 計算される
     amd_sev_snp = null
+
+    # 設定内容: ネステッド仮想化の有効化
+    # 設定可能な値: "enabled" / "disabled"
+    # 省略時: 計算される
+    # 備考: 第8世代Intelベースインスタンス（C8i, M8i, R8i およびそのflexバリアント）のみ対応
+    nested_virtualization = null
   }
 
   # 設定内容: バースト対応インスタンス（T系）のクレジット仕様
@@ -590,11 +635,6 @@ resource "aws_spot_instance_request" "example" {
     ManagedBy   = "terraform"
   }
 
-  # 設定内容: インスタンスに関連付けられたEBSボリュームに付与するタグ
-  # 設定可能な値: キーと値のペアのマップ
-  # 省略時: タグは設定されない
-  # 備考: EBSブロックデバイスの個別tagsを設定する場合はそちらを優先してください
-
   #-----------------------------------------------------------------------
   # タイムアウト設定
   #-----------------------------------------------------------------------
@@ -624,6 +664,7 @@ resource "aws_spot_instance_request" "example" {
 # このリソースが公開する属性の参照方法
 #
 # - id: スポットリクエストID（例: sir-xxxxxxxxxx）
+# - arn: インスタンスのARN
 # - spot_instance_id: 充足されたスポットインスタンスのID
 # - spot_bid_status: スポットリクエストのビッドステータス
 # - spot_request_state: スポットリクエストの状態（open / active / closed など）

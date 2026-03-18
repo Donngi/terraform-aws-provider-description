@@ -9,6 +9,8 @@
 # 注意事項:
 # - CORS設定はバケット単位で適用されます
 # - 最大100個のcors_ruleを設定できます
+# - 同一バケットに対して複数のaws_s3_bucket_cors_configurationリソースを宣言すると
+#   設定の永続的な差分が発生します
 # - このリソースはS3ディレクトリバケットでは使用できません
 # - CORS設定はHTTPヘッダーを通じてブラウザに伝えられるため、
 #   サーバーサイドのアクセス制御とは独立して動作します
@@ -20,8 +22,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_cors_configuration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -34,15 +36,16 @@ resource "aws_s3_bucket_cors_configuration" "example" {
   #-------------------------------------------------------------
 
   # bucket (Required)
-  # 設定内容: CORS設定を適用するバケットの名前またはARNを指定します。
-  # 設定可能な値: 既存のS3バケット名またはARN
+  # 設定内容: CORS設定を適用するバケットの名前を指定します。
+  # 設定可能な値: 既存のS3バケット名
+  # 注意: 変更すると再作成されます（Forces new resource）
   bucket = "my-bucket-name"
 
-  # expected_bucket_owner (Optional)
+  # expected_bucket_owner (Optional, 非推奨)
   # 設定内容: バケットの予期される所有者のAWSアカウントIDを指定します。
   # 設定可能な値: 12桁のAWSアカウントID
   # 省略時: 所有者の検証は行われません
-  # 用途: バケット所有者の検証を行い、意図しないバケットへの操作を防止します
+  # 注意: この属性は非推奨です。変更すると再作成されます（Forces new resource）
   expected_bucket_owner = null
 
   # region (Optional)

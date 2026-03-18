@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/odb_network
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -107,6 +107,36 @@ resource "aws_odb_network" "example" {
   # 省略時: デフォルトのアクセスポリシーが適用されます。
   # 注意: s3_access が "ENABLED" の場合のみ有効です。
   s3_policy_document = null
+
+  # kms_access (Optional)
+  # 設定内容: ODBネットワークからAmazon KMSへのアクセス設定を指定します。
+  # 設定可能な値:
+  #   - "ENABLED": KMSアクセスを有効化。ODBネットワークからKMSへの接続を提供
+  #   - "DISABLED": KMSアクセスを無効化
+  # 省略時: AWSがデフォルト値を設定します。
+  kms_access = null
+
+  # kms_policy_document (Optional)
+  # 設定内容: ODBネットワークからのAmazon KMSアクセスに対するエンドポイントポリシーを指定します。
+  # 設定可能な値: 有効なKMSエンドポイントポリシーのJSONドキュメント
+  # 省略時: デフォルトのアクセスポリシーが適用されます。
+  # 注意: kms_access が "ENABLED" の場合のみ有効です。
+  kms_policy_document = null
+
+  # sts_access (Optional)
+  # 設定内容: ODBネットワークからAmazon STSへのアクセス設定を指定します。
+  # 設定可能な値:
+  #   - "ENABLED": STSアクセスを有効化。ODBネットワークからSTSへの接続を提供
+  #   - "DISABLED": STSアクセスを無効化
+  # 省略時: AWSがデフォルト値を設定します。
+  sts_access = null
+
+  # sts_policy_document (Optional)
+  # 設定内容: ODBネットワークからのAmazon STSアクセスに対するエンドポイントポリシーを指定します。
+  # 設定可能な値: 有効なSTSエンドポイントポリシーのJSONドキュメント
+  # 省略時: デフォルトのアクセスポリシーが適用されます。
+  # 注意: sts_access が "ENABLED" の場合のみ有効です。
+  sts_policy_document = null
 
   #-------------------------------------------------------------
   # DNS設定
@@ -201,13 +231,13 @@ resource "aws_odb_network" "example" {
 # - status_reason: ODBネットワークの現在のステータスに関する追加情報
 # - created_at: ODBネットワークが作成された日時
 # - percent_progress: 現在の操作の進捗率（パーセント）
-# - oci_network_anchor_id: ODBネットワークのOCIネットワークアンカーの一意の識別子
-# - oci_network_anchor_url: ODBネットワークのOCIネットワークアンカーのURL
-# - oci_resource_anchor_name: ODBネットワークのOCIリソースアンカー名
-# - oci_vcn_id: ODBネットワークのOCI VCNのOCID（Oracle Cloud ID）
-# - oci_vcn_url: ODBネットワークのOCI VCNのURL
-# - oci_dns_forwarding_configs: ociPrivateZoneドメインのDNSクエリ転送用OCIのDNSリゾルバーエンドポイント
-# - peered_cidrs: ODBネットワークへのアクセスが許可されたピアリングVPCのCIDR範囲のリスト
-# - managed_services: ODBネットワークのマネージドサービス設定
-# - tags_all: プロバイダーのdefault_tags設定を含むすべてのタグのマップ
+# - oci_network_anchor_id: OCIネットワークアンカーの一意の識別子
+# - oci_network_anchor_url: OCIネットワークアンカーのURL
+# - oci_resource_anchor_name: OCIリソースアンカー名
+# - oci_vcn_id: OCI VCNのOCID（Oracle Cloud ID）
+# - oci_vcn_url: OCI VCNのURL
+# - oci_dns_forwarding_configs: DNS転送用OCIのDNSリゾルバーエンドポイント
+# - peered_cidrs: ピアリングVPCのCIDR範囲のリスト
+# - managed_services: マネージドサービス設定
+# - tags_all: default_tagsを含むすべてのタグのマップ
 #---------------------------------------------------------------

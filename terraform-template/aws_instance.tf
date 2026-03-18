@@ -8,13 +8,13 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 #
 # NOTE:
 #   - user_dataとuser_data_base64は同時に指定できません。どちらか一方を使用してください
 #   - security_groupsはEC2-Classic専用です。VPC環境ではvpc_security_group_idsを使用してください
-#   - network_interfaceブロックとvpc_security_group_idsは同時に使用できません
+#   - network_interfaceブロックはdeprecatedです。primary_network_interfaceを使用してください
 #   - launch_templateを指定する場合、同じ設定項目はaws_instanceの定義が優先されます
 #   - インスタンス停止が必要な変更（例: instance_type）はapply時に自動的に停止・再起動されます
 #   - user_data_replace_on_change = trueの場合、user_dataを変更するとインスタンスが再作成されます
@@ -149,6 +149,43 @@ resource "aws_instance" "example" {
   #   # 設定内容: アタッチするプライマリネットワークインターフェースのID（必須）
   #   # 設定可能な値: ネットワークインターフェースID（例: eni-xxxxxxxxxxxxxxxxx）
   #   network_interface_id = "eni-xxxxxxxxxxxxxxxxx"
+  # }
+
+  #-----------------------------------------------------------------------
+  # セカンダリネットワークインターフェース設定
+  #-----------------------------------------------------------------------
+
+  # 設定内容: 起動時にアタッチするセカンダリネットワークインターフェースの設定（複数指定可能）
+  # 省略時: セカンダリネットワークインターフェースはアタッチされない
+  # 備考: 各ネットワークカードに1つのセカンダリインターフェースを持てます。変更時はインスタンスが再作成されます
+  # secondary_network_interface {
+  #   # 設定内容: セカンダリインターフェースを作成するサブネットのID（必須）
+  #   # 設定可能な値: サブネットID（例: subnet-xxxxxxxxxxxxxxxxx）
+  #   secondary_subnet_id = "subnet-xxxxxxxxxxxxxxxxx"
+  #
+  #   # 設定内容: ネットワークカードのインデックス（必須）
+  #   # 設定可能な値: 0以上の整数
+  #   network_card_index = 1
+  #
+  #   # 設定内容: ネットワークインターフェースのデバイスインデックス
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: 0
+  #   device_index = 0
+  #
+  #   # 設定内容: ネットワークインターフェースのタイプ
+  #   # 設定可能な値: "secondary"
+  #   # 省略時: "secondary"
+  #   interface_type = "secondary"
+  #
+  #   # 設定内容: インスタンス終了時にネットワークインターフェースを削除するかどうか
+  #   # 設定可能な値: true / false
+  #   # 省略時: true
+  #   delete_on_termination = true
+  #
+  #   # 設定内容: ネットワークインターフェースに割り当てるプライベートIPアドレスの数
+  #   # 設定可能な値: 1以上の整数
+  #   # 省略時: 1
+  #   private_ip_address_count = 1
   # }
 
   #-----------------------------------------------------------------------
@@ -430,6 +467,12 @@ resource "aws_instance" "example" {
     # 設定可能な値: "enabled" / "disabled"
     # 省略時: 計算される
     amd_sev_snp = null
+
+    # 設定内容: ネステッド仮想化の有効化
+    # 設定可能な値: "enabled" / "disabled"
+    # 省略時: 計算される
+    # 備考: 第8世代Intelベースインスタンス（C8i, M8i, R8i およびそのflexバリアント）のみ対応。有効化するとVSMは自動的に無効化されます
+    nested_virtualization = null
   }
 
   # 設定内容: バースト対応インスタンス（T系）のクレジット仕様
@@ -454,7 +497,7 @@ resource "aws_instance" "example" {
   # 省略時: オンデマンドインスタンスとして起動される
   # instance_market_options {
   #   # 設定内容: マーケットタイプ
-  #   # 設定可能な値: "spot"
+  #   # 設定可能な値: "spot" / "capacity-block"
   #   # 省略時: 計算される
   #   market_type = "spot"
   #

@@ -15,14 +15,14 @@
 #
 # AWS公式ドキュメント:
 #   - S3 Tables 概要: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html
-#   - テーブルバケット作成: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-create-table-bucket.html
+#   - テーブルバケット作成: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-buckets-create.html
 #   - メンテナンス設定: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-maintenance.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3tables_table_bucket
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -37,7 +37,7 @@ resource "aws_s3tables_table_bucket" "example" {
   # name (Required)
   # 設定内容: テーブルバケットの名前を指定します。
   # 設定可能な値: 小文字英数字およびハイフンを含む 3〜63 文字の文字列。
-  #   AWSアカウントおよびリージョンをまたいでグローバルに一意である必要があります。
+  #   先頭と末尾は小文字英数字。AWSアカウント内のリージョンごとに一意である必要があります。
   # 参考: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-create-table-bucket.html
   name = "my-table-bucket"
 
@@ -86,7 +86,7 @@ resource "aws_s3tables_table_bucket" "example" {
       #   - "disabled": ジョブを無効化
       status = "enabled"
 
-      # settings (Optional)
+      # settings (Required)
       # 設定内容: 未参照ファイル削除ジョブの詳細パラメーターを指定します。
       settings = {
         # non_current_days (Required)

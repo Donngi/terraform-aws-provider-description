@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/odb_cloud_autonomous_vm_cluster
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -43,17 +43,33 @@ resource "aws_odb_cloud_autonomous_vm_cluster" "example" {
   # インフラストラクチャ設定
   #-------------------------------------------------------------
 
-  # cloud_exadata_infrastructure_id (Required, Forces new resource)
+  # cloud_exadata_infrastructure_id (Optional, Forces new resource)
   # 設定内容: Autonomous VM クラスターを作成する Exadata インフラストラクチャの ID を指定します。
   # 設定可能な値: 有効な ODB Cloud Exadata Infrastructure の ID
-  # 注意: cloud_exadata_infrastructure_id と odb_network_id の組み合わせが必須です。
+  # 省略時: cloud_exadata_infrastructure_arn から自動算出されます
+  # 注意: cloud_exadata_infrastructure_id または cloud_exadata_infrastructure_arn のいずれかを指定します。
   cloud_exadata_infrastructure_id = "aws-ocid1.cloudexadatainfrastructure.oc1.example"
 
-  # odb_network_id (Required, Forces new resource)
+  # cloud_exadata_infrastructure_arn (Optional, Forces new resource)
+  # 設定内容: Autonomous VM クラスターを作成する Exadata インフラストラクチャの ARN を指定します。
+  # 設定可能な値: 有効な ODB Cloud Exadata Infrastructure の ARN
+  # 省略時: cloud_exadata_infrastructure_id から自動算出されます
+  # 注意: cloud_exadata_infrastructure_id または cloud_exadata_infrastructure_arn のいずれかを指定します。
+  # cloud_exadata_infrastructure_arn = "arn:aws:odb:us-east-1:123456789012:cloud-exadata-infrastructure/example"
+
+  # odb_network_id (Optional, Forces new resource)
   # 設定内容: この Autonomous VM クラスターに関連付ける ODB ネットワークの一意識別子を指定します。
   # 設定可能な値: 有効な ODB ネットワーク ID
-  # 注意: cloud_exadata_infrastructure_id と odb_network_id の組み合わせが必須です。
+  # 省略時: odb_network_arn から自動算出されます
+  # 注意: odb_network_id または odb_network_arn のいずれかを指定します。
   odb_network_id = "aws-ocid1.odbnetwork.oc1.example"
+
+  # odb_network_arn (Optional, Forces new resource)
+  # 設定内容: この Autonomous VM クラスターに関連付ける ODB ネットワークの ARN を指定します。
+  # 設定可能な値: 有効な ODB ネットワーク ARN
+  # 省略時: odb_network_id から自動算出されます
+  # 注意: odb_network_id または odb_network_arn のいずれかを指定します。
+  # odb_network_arn = "arn:aws:odb:us-east-1:123456789012:odb-network/example"
 
   # db_servers (Required, Forces new resource)
   # 設定内容: Autonomous VM クラスターを構成するデータベースサーバーの ID セットを指定します。

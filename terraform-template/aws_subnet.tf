@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-19
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -74,6 +74,22 @@ resource "aws_subnet" "example" {
   # 参考: https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html#subnet-ip-address-range
   cidr_block = "10.0.1.0/24"
 
+  # ipv4_ipam_pool_id (Optional)
+  # 設定内容: サブネットのCIDRを割り当てるIPv4 IPAMプールのIDを指定します。
+  #           IPAMを使用してIPアドレス管理を自動化する場合に使用します。
+  # 設定可能な値: 有効なIPAMプールID（例: "ipam-pool-0123456789abcdef0"）
+  # 省略時: cidr_blockで直接CIDRを指定します。
+  # 参考: https://docs.aws.amazon.com/vpc/latest/ipam/tracking-ip-addresses-ipam.html
+  ipv4_ipam_pool_id = null
+
+  # ipv4_netmask_length (Optional)
+  # 設定内容: IPAMプールから割り当てるIPv4 CIDRのネットマスク長を指定します。
+  #           ipv4_ipam_pool_idと合わせて使用します。
+  # 設定可能な値: 整数値（VPCのCIDR範囲内の有効なネットマスク長）
+  # 省略時: cidr_blockで直接指定する場合は省略可能
+  # 注意: ipv4_ipam_pool_idの指定が必要です。
+  ipv4_netmask_length = null
+
   #-------------------------------------------------------------
   # IPv6 CIDR設定
   #-------------------------------------------------------------
@@ -85,6 +101,21 @@ resource "aws_subnet" "example" {
   # 注意: assign_ipv6_address_on_creation = true でこの値を変更するとリソースが再作成されます
   # 参考: https://docs.aws.amazon.com/vpc/latest/userguide/subnet-associate-ipv6-cidr.html
   ipv6_cidr_block = null
+
+  # ipv6_ipam_pool_id (Optional)
+  # 設定内容: サブネットのIPv6 CIDRを割り当てるIPAMプールのIDを指定します。
+  # 設定可能な値: 有効なIPv6 IPAMプールID
+  # 省略時: ipv6_cidr_blockで直接CIDRを指定するか、IPv6を使用しない場合は省略可能
+  # 参考: https://docs.aws.amazon.com/vpc/latest/ipam/tracking-ip-addresses-ipam.html
+  ipv6_ipam_pool_id = null
+
+  # ipv6_netmask_length (Optional)
+  # 設定内容: IPAMプールから割り当てるIPv6 CIDRのネットマスク長を指定します。
+  #           ipv6_ipam_pool_idと合わせて使用します。
+  # 設定可能な値: 44から64までの整数（4の倍数）
+  # 省略時: ipv6_cidr_blockで直接指定する場合は省略可能
+  # 注意: ipv6_ipam_pool_idの指定が必要です。
+  ipv6_netmask_length = null
 
   # ipv6_native (Optional)
   # 設定内容: IPv6専用サブネットを作成するかを指定します。

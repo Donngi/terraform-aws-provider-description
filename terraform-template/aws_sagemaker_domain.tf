@@ -14,10 +14,10 @@
 #   - DomainSettings: https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DomainSettings.html
 #
 # Terraform Registry:
-#   - https://registry.terraform.io/providers/hashicorp/aws/6.28.0/docs/resources/sagemaker_domain
+#   - https://registry.terraform.io/providers/hashicorp/aws/6.36.0/docs/resources/sagemaker_domain
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -1355,6 +1355,21 @@ resource "aws_sagemaker_domain" "example" {
         # 設定可能な値: 有効なライフサイクル設定 ARN
         lifecycle_config_arn = null
       }
+    }
+
+    # trusted_identity_propagation_settings (Optional)
+    # 設定内容: 信頼されたアイデンティティ伝播の設定ブロックを指定します。
+    #           IAM Identity Center のアイデンティティコンテキストを SageMaker ドメイン内の
+    #           サービス間で伝播させることができます。
+    # 注意: 最大1件まで指定可能
+    trusted_identity_propagation_settings {
+
+      # status (Required)
+      # 設定内容: 信頼されたアイデンティティ伝播を有効化するかを指定します。
+      # 設定可能な値:
+      #   - "ENABLED": アイデンティティ伝播を有効化
+      #   - "DISABLED": アイデンティティ伝播を無効化
+      status = "DISABLED"
     }
   }
 

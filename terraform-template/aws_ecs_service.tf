@@ -28,8 +28,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -625,6 +625,25 @@ resource "aws_ecs_service" "example" {
   #   #   #   #              またはSSM Parameter StoreパラメータのフルARN
   #   #   #   value_from = "arn:aws:secretsmanager:ap-northeast-1:123456789012:secret:example-secret"
   #   #   # }
+  #   # }
+  #
+  #   #-----------------------------------------------------------
+  #   # アクセスログ設定
+  #   #-----------------------------------------------------------
+  #   # access_log_configuration {
+  #   #   # format (Required)
+  #   #   # 設定内容: Service Connectアクセスログの出力形式を指定します。
+  #   #   # 設定可能な値: "TEXT", "JSON"
+  #   #   # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-envoy-access-logs.html
+  #   #   format = "TEXT"
+  #   #
+  #   #   # include_query_parameters (Optional)
+  #   #   # 設定内容: Service Connectアクセスログにクエリパラメータを含めるかを指定します。
+  #   #   # 設定可能な値: "ENABLED", "DISABLED"
+  #   #   # 省略時: "DISABLED"
+  #   #   # 注意: アクセスログは log_configuration ブロックで指定されたログ送信先に配信されます。
+  #   #   #       "ENABLED" にすると、リクエストID、トークン等のセンシティブ情報がログに含まれる可能性があります。
+  #   #   include_query_parameters = "DISABLED"
   #   # }
   #
   #   #-----------------------------------------------------------

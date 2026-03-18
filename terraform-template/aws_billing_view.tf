@@ -2,7 +2,7 @@
 # AWS Billing View
 #---------------------------------------------------------------
 #
-# AWS Billing and Cost Managementのカスタムビリングビューをプロビジョニングするリソースです。
+# AWS Billing and Cost Managementのカスタムビリングビューを管理するリソースです。
 # カスタムビリングビューを使用すると、組織内外のアカウントに対してコスト管理データへの
 # 特定のアクセス権を付与できます。複数のアカウントや組織からのコスト管理データを
 # 統合し、Cost ExplorerやAWS Budgetsで可視化することが可能です。
@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/billing_view
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -30,7 +30,7 @@ resource "aws_billing_view" "example" {
   # name (Required)
   # 設定内容: カスタムビリングビューの名前を指定します。
   # 設定可能な値: 任意の文字列
-  # 用途: ユーザーがビリングビューのデータ内容を識別するための短く説明的な名前を設定します。
+  # 用途: ビリングビューのデータ内容を識別するための短く説明的な名前を設定します。
   #       「Choose billing view」メニューから選択する際に表示されます。
   name = "example-billing-view"
 
@@ -38,18 +38,13 @@ resource "aws_billing_view" "example" {
   # 設定内容: カスタムビリングビューの説明を指定します。
   # 設定可能な値: 任意の文字列
   # 用途: ビリングビューのコンテンツについての詳細情報を記載します。
-  #       Billing Viewタブに表示されます。
   description = "Example custom billing view for application team"
 
   # source_views (Optional)
   # 設定内容: カスタムビリングビューのソースとなるビリングビューのARNリストを指定します。
-  # 設定可能な値: ビリングビューARNのリスト（最大20個）
+  # 設定可能な値: ビリングビューARNのリスト
   # 用途: 複数のソースビューからコスト管理データを統合する場合に使用します。
   #       プライマリビリングビューや他のカスタムビリングビューを指定できます。
-  # 関連機能: マルチソースビリングビュー
-  #   複数の組織からのコスト管理データを単一のカスタムビリングビューに統合し、
-  #   企業全体のコスト監視を一元化できます。
-  #   - https://docs.aws.amazon.com/cost-management/latest/userguide/billing-view.html
   source_views = [
     "arn:aws:billing::123456789012:billingview/primary"
   ]
@@ -61,13 +56,8 @@ resource "aws_billing_view" "example" {
   # data_filter_expression (Optional)
   # 設定内容: Cost Explorer APIのフィルター式を指定します。
   # 用途: カスタムビリングビューに含めるコスト管理データのサブセットを定義します。
-  #       コスト配分タグ、アカウント、または時間範囲でフィルタリングできます。
-  # 関連機能: コスト管理データのフィルタリング
-  #   - https://docs.aws.amazon.com/cost-management/latest/userguide/create-custom-billing-views.html
+  #       ディメンション、コスト配分タグ、時間範囲でフィルタリングできます。
   data_filter_expression {
-    #-------------------------------------------------------------
-    # ディメンションフィルター
-    #-------------------------------------------------------------
 
     # dimensions (Optional)
     # 設定内容: ディメンションベースのフィルター条件を指定します。
@@ -75,8 +65,7 @@ resource "aws_billing_view" "example" {
     dimensions {
       # key (Required)
       # 設定内容: フィルタリングに使用するディメンションのキーを指定します。
-      # 設定可能な値:
-      #   - "LINKED_ACCOUNT": リンクされたアカウントでフィルタリング
+      # 設定可能な値: "LINKED_ACCOUNT"
       key = "LINKED_ACCOUNT"
 
       # values (Required)
@@ -85,16 +74,10 @@ resource "aws_billing_view" "example" {
       values = ["111111111111", "222222222222"]
     }
 
-    #-------------------------------------------------------------
-    # タグフィルター
-    #-------------------------------------------------------------
-
     # tags (Optional)
     # 設定内容: コスト配分タグベースのフィルター条件を指定します。
     # 用途: コスト配分タグを使用してコスト管理データをフィルタリングします。
     #       1つのキーに対して複数の値を指定できます。
-    # 関連機能: コスト配分タグ
-    #   - https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html
     # tags {
     #   # key (Required)
     #   # 設定内容: フィルタリングに使用するタグのキーを指定します。
@@ -104,10 +87,6 @@ resource "aws_billing_view" "example" {
     #   # 設定内容: フィルタリングに使用するタグ値のリストを指定します。
     #   values = ["80432", "78925"]
     # }
-
-    #-------------------------------------------------------------
-    # 時間範囲フィルター
-    #-------------------------------------------------------------
 
     # time_range (Optional)
     # 設定内容: 時間範囲ベースのフィルター条件を指定します。
@@ -131,11 +110,8 @@ resource "aws_billing_view" "example" {
 
   # tags (Optional)
   # 設定内容: リソースに割り当てるタグのマップを指定します。
-  # 設定可能な値: キーと値のペアのマップ（最大50個）
-  # 関連機能: AWSリソースタグ付け
-  #   プロバイダーレベルのdefault_tags設定ブロックで定義されたタグと
-  #   一致するキーを持つタグは、プロバイダーレベルで定義されたものを上書きします。
-  #   - https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html
+  # 設定可能な値: キーと値のペアのマップ
+  # 省略時: タグなし
   tags = {
     Name        = "example-billing-view"
     Environment = "production"
@@ -151,19 +127,19 @@ resource "aws_billing_view" "example" {
     # create (Optional)
     # 設定内容: リソース作成時のタイムアウト時間を指定します。
     # 設定可能な値: 時間を表す文字列（例: "30s", "2h45m"）
-    # 有効な時間単位: "s"（秒）, "m"（分）, "h"（時間）
+    # 省略時: プロバイダーのデフォルト値
     create = "30m"
 
     # update (Optional)
     # 設定内容: リソース更新時のタイムアウト時間を指定します。
     # 設定可能な値: 時間を表す文字列（例: "30s", "2h45m"）
-    # 有効な時間単位: "s"（秒）, "m"（分）, "h"（時間）
+    # 省略時: プロバイダーのデフォルト値
     update = "30m"
 
     # delete (Optional)
     # 設定内容: リソース削除時のタイムアウト時間を指定します。
     # 設定可能な値: 時間を表す文字列（例: "30s", "2h45m"）
-    # 有効な時間単位: "s"（秒）, "m"（分）, "h"（時間）
+    # 省略時: プロバイダーのデフォルト値
     delete = "30m"
   }
 }
@@ -173,24 +149,14 @@ resource "aws_billing_view" "example" {
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - arn: ビリングビューのAmazon Resource Name (ARN)
-#
-# - billing_view_type: ビリングビューのタイプ
-#   有効な値: PRIMARY | BILLING_GROUP | CUSTOM
-#
-# - created_at: ビリングビューが作成されたタイムスタンプ
-#
-# - derived_view_count: このビリングビューをソースとして使用している
-#   ビリングビューの数
-#
+# - arn: ビリングビューのARN
+# - billing_view_type: ビリングビューのタイプ (PRIMARY|BILLING_GROUP|CUSTOM)
+# - created_at: ビリングビューの作成タイムスタンプ
+# - derived_view_count: このビューをソースとして使用しているビューの数
 # - owner_account_id: ビリングビューを所有するアカウントID
-#
-# - source_account_id: 派生ビリングビューの場合、ソースビリングビューを
-#   所有するAWSアカウントID
-#
-# - source_view_count: このビリングビューに関連付けられた
-#   ソースビューの数
-#
-# - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ
+# - source_account_id: ソースビリングビューを所有するアカウントID
+# - source_view_count: 関連付けられたソースビューの数
+# - tags_all: default_tagsを含む全タグのマップ
+# - updated_at: ビリングビューの最終更新タイムスタンプ
+# - view_definition_last_updated_at: ビュー定義の最終更新タイムスタンプ
 #---------------------------------------------------------------

@@ -8,8 +8,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/launch_template
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 #
 # NOTE:
 #   - nameとname_prefixは同時に指定できません。どちらか一方を使用してください
@@ -134,8 +134,9 @@ resource "aws_launch_template" "example" {
   # 設定内容: AMI以外のEBSボリュームまたはインスタンスストアの追加設定
   # 省略時: AMIのデフォルトブロックデバイスマッピングが使用される
   block_device_mappings {
-    # 設定内容: マウントするデバイス名（必須）
+    # 設定内容: マウントするデバイス名
     # 設定可能な値: "/dev/sda1", "/dev/xvda", "/dev/sdf" など
+    # 省略時: 使用されない
     device_name = "/dev/sdf"
 
     # 設定内容: AMIのブロックデバイスマッピングから除外するデバイスの指定
@@ -242,6 +243,11 @@ resource "aws_launch_template" "example" {
     # 省略時: 計算される（threads_per_coreと同時指定が必要）
     core_count = 4
 
+    # 設定内容: ネストされた仮想化の有効化設定
+    # 設定可能な値: "enabled" / "disabled"
+    # 省略時: 計算される（C8i / M8i / R8i およびそのFlexバリアントのみ対応。有効時はVSMが自動無効化される）
+    nested_virtualization = null
+
     # 設定内容: 1コアあたりのスレッド数（ハイパースレッディングの制御）
     # 設定可能な値: 1（無効化）/ 2（有効化）
     # 省略時: 計算される（core_countと同時指定が必要）
@@ -281,9 +287,8 @@ resource "aws_launch_template" "example" {
   # 設定内容: インスタンスのハイバネーション（休止）設定
   # 省略時: ハイバネーションは設定されない
   hibernation_options {
-    # 設定内容: ハイバネーションを有効にするかどうか
+    # 設定内容: ハイバネーションを有効にするかどうか（必須）
     # 設定可能な値: true / false
-    # 省略時: 計算される
     configured = false
   }
 
@@ -314,6 +319,7 @@ resource "aws_launch_template" "example" {
   # instance_market_options {
   #   # 設定内容: マーケットタイプ
   #   # 設定可能な値: "spot"
+  #   # 省略時: 計算される
   #   market_type = "spot"
   #
   #   # 設定内容: スポットインスタンスのオプション設定
@@ -335,6 +341,7 @@ resource "aws_launch_template" "example" {
   #
   #     # 設定内容: スポットインスタンスリクエストタイプ
   #     # 設定可能な値: "one-time" / "persistent"
+  #     # 省略時: 計算される
   #     spot_instance_type = "one-time"
   #
   #     # 設定内容: スポットリクエストの有効期限（UTC形式）
@@ -353,7 +360,11 @@ resource "aws_launch_template" "example" {
   # instance_requirements {
   #   # 設定内容: アクセラレータ（GPU / FPGA / AWS Inferentiaチップ）の数の範囲
   #   # accelerator_count {
+  #   #   # 設定内容: 最小アクセラレータ数
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大アクセラレータ数（0を指定するとアクセラレータ付きインスタンスを除外）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -369,7 +380,11 @@ resource "aws_launch_template" "example" {
   #
   #   # 設定内容: アクセラレータの合計メモリ範囲（MiB）
   #   # accelerator_total_memory_mib {
+  #   #   # 設定内容: 最小合計メモリ（MiB）
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大合計メモリ（MiB）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -390,7 +405,11 @@ resource "aws_launch_template" "example" {
   #
   #   # 設定内容: EBSベースライン帯域幅の範囲（Mbps）
   #   # baseline_ebs_bandwidth_mbps {
+  #   #   # 設定内容: 最小帯域幅（Mbps）
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大帯域幅（Mbps）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -398,6 +417,11 @@ resource "aws_launch_template" "example" {
   #   # 設定可能な値: "included" / "excluded" / "required"
   #   # 省略時: "excluded"
   #   burstable_performance = "excluded"
+  #
+  #   # 設定内容: CPUメーカーのリスト
+  #   # 設定可能な値: "amazon-web-services" / "amd" / "intel"
+  #   # 省略時: すべてのメーカーが対象
+  #   cpu_manufacturers = []
   #
   #   # 設定内容: 除外するインスタンスタイプのリスト（ワイルドカード使用可）
   #   # 設定可能な値: インスタンスタイプ文字列のリスト（最大400件、各30文字以内）
@@ -426,7 +450,11 @@ resource "aws_launch_template" "example" {
   #
   #   # 設定内容: vCPUあたりのメモリ範囲（GiB）
   #   # memory_gib_per_vcpu {
+  #   #   # 設定内容: 最小メモリ（GiB/vCPU、小数指定可）
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大メモリ（GiB/vCPU、小数指定可）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -441,13 +469,21 @@ resource "aws_launch_template" "example" {
   #
   #   # 設定内容: ネットワーク帯域幅範囲（Gbps）
   #   # network_bandwidth_gbps {
+  #   #   # 設定内容: 最小帯域幅（Gbps）
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大帯域幅（Gbps）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
   #   # 設定内容: ネットワークインターフェース数の範囲
   #   # network_interface_count {
+  #   #   # 設定内容: 最小インターフェース数
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大インターフェース数
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -468,7 +504,11 @@ resource "aws_launch_template" "example" {
   #
   #   # 設定内容: 合計ローカルストレージ範囲（GB）
   #   # total_local_storage_gb {
+  #   #   # 設定内容: 最小ストレージ（GB、小数指定可）
+  #   #   # 省略時: 下限なし
   #   #   min = null
+  #   #   # 設定内容: 最大ストレージ（GB、小数指定可）
+  #   #   # 省略時: 上限なし
   #   #   max = null
   #   # }
   #
@@ -551,6 +591,19 @@ resource "aws_launch_template" "example" {
     # 設定可能な値: true / false
     # 省略時: 計算される
     enabled = true
+  }
+
+  #-----------------------------------------------------------------------
+  # ネットワークパフォーマンスオプション設定
+  #-----------------------------------------------------------------------
+
+  # 設定内容: ネットワーク帯域幅の重み付け設定
+  # 省略時: デフォルトの帯域幅割り当てが使用される
+  network_performance_options {
+    # 設定内容: ベースライン帯域幅の重み付けオプション
+    # 設定可能な値: "default" / "vpc-1"（VPC帯域幅を増加、EBS帯域幅を減少）/ "ebs-1"（EBS帯域幅を増加、VPC帯域幅を減少）
+    # 省略時: "default"（一部のインスタンスタイプのみ対応）
+    bandwidth_weighting = "default"
   }
 
   #-----------------------------------------------------------------------
@@ -661,38 +714,81 @@ resource "aws_launch_template" "example" {
   #   subnet_id = null
   #
   #   # 設定内容: ENA Express（Elastic Network Adapter）の設定
-  #   ena_srd_specification {
-  #     # 設定内容: ENA Expressを有効にするかどうか（TCPパフォーマンス向上）
-  #     # 設定可能な値: true / false
-  #     # 省略時: 計算される
-  #     ena_srd_enabled = null
-  #
-  #     # 設定内容: ENA Express UDPの最適化設定
-  #     ena_srd_udp_specification {
-  #       # 設定内容: UDP通信のENA Express最適化を有効にするかどうか
-  #       # 設定可能な値: true / false（ena_srd_enabled=trueが前提）
-  #       # 省略時: 計算される
-  #       ena_srd_udp_enabled = null
-  #     }
-  #   }
+  #   # ena_srd_specification {
+  #   #   # 設定内容: ENA Expressを有効にするかどうか（TCPパフォーマンス向上）
+  #   #   # 設定可能な値: true / false
+  #   #   # 省略時: 計算される
+  #   #   ena_srd_enabled = null
+  #   #
+  #   #   # 設定内容: ENA Express UDPの最適化設定
+  #   #   # ena_srd_udp_specification {
+  #   #   #   # 設定内容: UDP通信のENA Express最適化を有効にするかどうか
+  #   #   #   # 設定可能な値: true / false（ena_srd_enabled=trueが前提）
+  #   #   #   # 省略時: 計算される
+  #   #   #   ena_srd_udp_enabled = null
+  #   #   # }
+  #   # }
   #
   #   # 設定内容: 接続追跡設定（TCPおよびUDPのアイドルタイムアウト）
-  #   connection_tracking_specification {
-  #     # 設定内容: 確立済みTCP接続のアイドルタイムアウト（秒）
-  #     # 設定可能な値: 60〜432000
-  #     # 省略時: 432000（5日間）
-  #     tcp_established_timeout = null
+  #   # connection_tracking_specification {
+  #   #   # 設定内容: 確立済みTCP接続のアイドルタイムアウト（秒）
+  #   #   # 設定可能な値: 60〜432000
+  #   #   # 省略時: 432000（5日間）
+  #   #   tcp_established_timeout = null
+  #   #
+  #   #   # 設定内容: ストリーム分類済みUDPフローのアイドルタイムアウト（秒）
+  #   #   # 設定可能な値: 60〜180
+  #   #   # 省略時: 180
+  #   #   udp_stream_timeout = null
+  #   #
+  #   #   # 設定内容: 単方向UDPフローのアイドルタイムアウト（秒）
+  #   #   # 設定可能な値: 30〜60
+  #   #   # 省略時: 30
+  #   #   udp_timeout = null
+  #   # }
+  # }
+
+  #-----------------------------------------------------------------------
+  # セカンダリインターフェース設定
+  #-----------------------------------------------------------------------
+
+  # 設定内容: インスタンスに関連付けるセカンダリネットワークインターフェースの設定（複数指定可能）
+  # 省略時: セカンダリインターフェースは設定されない
+  # secondary_interfaces {
+  #   # 設定内容: インスタンス終了時にセカンダリインターフェースを削除するかどうか
+  #   # 設定可能な値: true（trueのみサポート）
+  #   # 省略時: 計算される
+  #   delete_on_termination = true
   #
-  #     # 設定内容: ストリーム分類済みUDPフローのアイドルタイムアウト（秒）
-  #     # 設定可能な値: 60〜180
-  #     # 省略時: 180
-  #     udp_stream_timeout = null
+  #   # 設定内容: セカンダリインターフェースのデバイスインデックス
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: 計算される
+  #   device_index = null
   #
-  #     # 設定内容: 単方向UDPフローのアイドルタイムアウト（秒）
-  #     # 設定可能な値: 30〜60
-  #     # 省略時: 30
-  #     udp_timeout = null
-  #   }
+  #   # 設定内容: セカンダリインターフェースのタイプ
+  #   # 設定可能な値: "secondary"
+  #   # 省略時: 計算される
+  #   interface_type = "secondary"
+  #
+  #   # 設定内容: ネットワークカードのインデックス
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: 計算される
+  #   network_card_index = null
+  #
+  #   # 設定内容: セカンダリインターフェースに割り当てるプライベートIPv4アドレスの数
+  #   # 設定可能な値: 0以上の整数
+  #   # 省略時: 計算される。private_ip_addressesと競合
+  #   private_ip_address_count = null
+  #
+  #   # 設定内容: セカンダリインターフェースに割り当てるプライベートIPv4アドレスのリスト
+  #   # 設定可能な値: IPv4アドレスのリスト
+  #   # 省略時: 使用されない。private_ip_address_countと競合
+  #   private_ip_addresses = []
+  #
+  #   # 設定内容: セカンダリサブネットのID
+  #   # 設定可能な値: サブネットID（例: subnet-xxxxxxxxxxxxxxxxx）
+  #   # 省略時: 計算される
+  #   secondary_subnet_id = null
   # }
 
   #-----------------------------------------------------------------------

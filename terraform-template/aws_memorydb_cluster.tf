@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/memorydb_cluster
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-31
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -112,10 +112,10 @@ resource "aws_memorydb_cluster" "example" {
 
   # num_shards (Optional)
   # 設定内容: クラスタ内のシャード数を指定します。
-  # 設定可能な値: 1～500の整数
+  # 設定可能な値: 1〜500の整数
   # 省略時: 1（シングルシャード構成）
   # 関連機能: MemoryDB シャーディング
-  #   シャードは1～6個のノードのグループで、1つがプライマリ書き込みノード、
+  #   シャードは1〜6個のノードのグループで、1つがプライマリ書き込みノード、
   #   残りが読み取りレプリカとして機能します。クラスタは最大500シャードまで
   #   サポートします。
   #   - https://docs.aws.amazon.com/memorydb/latest/devguide/shards.html
@@ -123,7 +123,7 @@ resource "aws_memorydb_cluster" "example" {
 
   # num_replicas_per_shard (Optional)
   # 設定内容: 各シャードに適用するレプリカの数を指定します。
-  # 設定可能な値: 0～5の整数
+  # 設定可能な値: 0〜5の整数
   # 省略時: 1（つまり各シャードに2つのノード）
   # 関連機能: MemoryDB レプリケーション
   #   各シャードはプライマリノードと最大5つのレプリカノードで構成されます。
@@ -160,6 +160,24 @@ resource "aws_memorydb_cluster" "example" {
   # 設定内容: このクラスタに関連付けるVPCセキュリティグループIDのセットを指定します。
   # 設定可能な値: セキュリティグループIDのリスト
   security_group_ids = []
+
+  # network_type (Optional, Forces new resource)
+  # 設定内容: クラスタのIPアドレスタイプを指定します。
+  # 設定可能な値:
+  #   - "ipv4": IPv4のみ
+  #   - "ipv6": IPv6のみ
+  #   - "dual_stack": IPv4とIPv6の両方
+  # 省略時: "ipv4"
+  network_type = "ipv4"
+
+  # ip_discovery (Optional)
+  # 設定内容: クラスタがIPアドレスを検出するメカニズムを指定します。
+  # 設定可能な値:
+  #   - "ipv4": IPv4アドレスを使用して検出
+  #   - "ipv6": IPv6アドレスを使用して検出
+  # 省略時: "ipv4"
+  # 注意: "ipv6"を指定するにはnetwork_typeが"ipv6"または"dual_stack"である必要があります。
+  ip_discovery = "ipv4"
 
   # port (Optional, Forces new resource)
   # 設定内容: 各ノードが接続を受け付けるポート番号を指定します。
@@ -219,7 +237,7 @@ resource "aws_memorydb_cluster" "example" {
 
   # snapshot_retention_limit (Optional)
   # 設定内容: MemoryDBが自動スナップショットを削除するまでの保持日数を指定します。
-  # 設定可能な値: 0～35の整数
+  # 設定可能な値: 0〜35の整数
   # 省略時: 0（自動バックアップが無効）
   # 注意: 0に設定すると自動バックアップが無効になります。
   # 関連機能: MemoryDB スナップショット
@@ -331,23 +349,13 @@ resource "aws_memorydb_cluster" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - id: nameと同じ値
-#
 # - arn: クラスタのAmazon Resource Name (ARN)
-#
 # - cluster_endpoint: クラスタ構成エンドポイント
-#   - address: クラスタ構成エンドポイントのDNSホスト名
-#   - port: クラスタ構成エンドポイントがリッスンしているポート番号
-#
-# - engine_patch_version: クラスタが使用しているエンジンのパッチバージョン番号
-#
-# - shards: このクラスタ内のシャードのセット
-#   - name: このシャードの名前
-#   - num_nodes: このシャード内の個別ノード数
-#   - slots: このシャードのキースペース（例: "0-16383"）
-#   - nodes: このシャード内のノードのセット
-#     - availability_zone: ノードが存在するアベイラビリティゾーン
-#     - create_time: ノードが作成された日時（例: "2022-01-01T21:00:00Z"）
-#     - name: このノードの名前
-#     - endpoint:
-#       - address: ノードのDNSホスト名
+#   - address: エンドポイントのDNSホスト名
+#   - port: エンドポイントがリッスンしているポート番号
+# - engine_patch_version: エンジンのパッチバージョン番号
+# - shards: クラスタ内のシャードのセット
+#   - name / num_nodes / slots / nodes
+#     - availability_zone / create_time / name / endpoint
+# - tags_all: プロバイダーdefault_tagsを含む全タグ
 #---------------------------------------------------------------

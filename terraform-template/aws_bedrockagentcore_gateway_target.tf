@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_gateway_target
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -57,7 +57,7 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
   #-------------------------------------------------------------
   # 認証設定 (credential_provider_configuration)
   #-------------------------------------------------------------
-  # mcpブロックでlambda、open_api_schema、smithy_modelを使用する場合は必須です。
+  # lambda、open_api_schema、smithy_modelを使用する場合は必須です。
   # mcp_serverを認証なしで使用する場合は指定しないでください。
   # 以下の3つから1つを選択して設定します:
   #   - gateway_iam_role: GatewayのIAMロールを使用
@@ -118,12 +118,24 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
     #   # 設定可能な値: 文字列のセット
     #   scopes = ["read", "write"]
     #
+    #   # grant_type (Optional)
+    #   # 設定内容: OAuthの認可タイプを指定します。
+    #   # 設定可能な値:
+    #   #   - "CLIENT_CREDENTIALS": マシン間認証
+    #   #   - "AUTHORIZATION_CODE": ユーザー委任アクセス
+    #   grant_type = "CLIENT_CREDENTIALS"
+    #
+    #   # default_return_url (Optional)
+    #   # 設定内容: 認可コード取得後にブラウザがリダイレクトされるURLを指定します。
+    #   # 設定可能な値: 有効なURL文字列
+    #   # 注意: grant_typeが"AUTHORIZATION_CODE"の場合は必須
+    #   # default_return_url = "https://myapp.example.com/callback"
+    #
     #   # custom_parameters (Optional)
     #   # 設定内容: OAuthリクエストに含めるカスタムパラメータを指定します。
     #   # 設定可能な値: 文字列のマップ
     #   custom_parameters = {
     #     "client_type" = "confidential"
-    #     "grant_type"  = "authorization_code"
     #   }
     # }
   }
@@ -401,6 +413,32 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
       #   # }
       # }
     }
+  }
+
+  #-------------------------------------------------------------
+  # メタデータ設定 (metadata_configuration)
+  #-------------------------------------------------------------
+  # GatewayとターゲットサーバーのHTTPヘッダーおよびクエリパラメータの
+  # 伝播設定を定義します。各設定は最大10項目まで指定可能です。
+  # 参考: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-headers.html
+
+  metadata_configuration {
+    # allowed_request_headers (Optional)
+    # 設定内容: クライアントリクエストからターゲットに伝播を許可するHTTPヘッダーを指定します。
+    # 設定可能な値: 文字列のセット（最大10件）
+    # 注意: 標準HTTPヘッダー（認証、コンテンツネゴシエーション等）や
+    #       X-Amzn-で始まるヘッダー（X-Amzn-Bedrock-AgentCore-Runtime-Custom-*を除く）は制限されています。
+    allowed_request_headers = ["x-correlation-id", "x-tenant-id"]
+
+    # allowed_response_headers (Optional)
+    # 設定内容: ターゲットレスポンスからクライアントに伝播を許可するHTTPヘッダーを指定します。
+    # 設定可能な値: 文字列のセット（最大10件）
+    allowed_response_headers = ["x-rate-limit-remaining"]
+
+    # allowed_query_parameters (Optional)
+    # 設定内容: GatewayのURLからターゲットに伝播を許可するURLクエリパラメータを指定します。
+    # 設定可能な値: 文字列のセット（最大10件）
+    allowed_query_parameters = ["version"]
   }
 
   #-------------------------------------------------------------

@@ -1,8 +1,8 @@
 # AWS EMR Serverless Application
-# https://registry.terraform.io/providers/hashicorp/aws/6.28.0/docs/resources/emrserverless_application
+# https://registry.terraform.io/providers/hashicorp/aws/6.36.0/docs/resources/emrserverless_application
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 #
 # EMR Serverlessアプリケーションのリソースです。
 # SparkやHiveなどのビッグデータ処理ワークロードをサーバーレス環境で実行できます。
@@ -46,6 +46,12 @@ resource "aws_emrserverless_application" "example" {
   #---------------------------------------
   # アーキテクチャ設定
   #---------------------------------------
+  # 設定内容: CPUアーキテクチャ
+  # 省略時: X86_64
+  # 設定可能な値: ARM64（Graviton）、X86_64
+  # 備考: Gravitonプロセッサはx86_64と比較してコストパフォーマンスに優れる
+  architecture = "X86_64"
+
   # auto_start_configuration {
   #   # 設定内容: ジョブ送信時の自動起動を有効化
   #   # 省略時: true（有効）
@@ -61,12 +67,6 @@ resource "aws_emrserverless_application" "example" {
   #   # 省略時: 15分
   #   idle_timeout_minutes = 15
   # }
-
-  # 設定内容: CPUアーキテクチャ
-  # 省略時: X86_64
-  # 設定可能な値: ARM64（Graviton）、X86_64
-  # 備考: Gravitonプロセッサはx86_64と比較してコストパフォーマンスに優れる
-  architecture = "X86_64"
 
   #---------------------------------------
   # キャパシティ設定
@@ -134,6 +134,29 @@ resource "aws_emrserverless_application" "example" {
   # }
 
   #---------------------------------------
+  # ネットワーク設定
+  #---------------------------------------
+  # network_configuration {
+  #   # 設定内容: VPC接続用のセキュリティグループIDリスト
+  #   # 省略時: セキュリティグループなし
+  #   security_group_ids = []
+  #
+  #   # 設定内容: VPC接続用のサブネットIDリスト
+  #   # 省略時: サブネットなし
+  #   subnet_ids = []
+  # }
+
+  #---------------------------------------
+  # イメージ設定
+  #---------------------------------------
+  # image_configuration {
+  #   # 設定内容: カスタムイメージのURI
+  #   # 必須項目
+  #   # 備考: すべてのワーカータイプに適用される
+  #   image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/custom-emr-image:latest"
+  # }
+
+  #---------------------------------------
   # モニタリング設定
   #---------------------------------------
   # monitoring_configuration {
@@ -196,29 +219,6 @@ resource "aws_emrserverless_application" "example" {
   # }
 
   #---------------------------------------
-  # ネットワーク設定
-  #---------------------------------------
-  # network_configuration {
-  #   # 設定内容: VPC接続用のセキュリティグループIDリスト
-  #   # 省略時: セキュリティグループなし
-  #   security_group_ids = []
-  #
-  #   # 設定内容: VPC接続用のサブネットIDリスト
-  #   # 省略時: サブネットなし
-  #   subnet_ids = []
-  # }
-
-  #---------------------------------------
-  # イメージ設定
-  #---------------------------------------
-  # image_configuration {
-  #   # 設定内容: カスタムイメージのURI
-  #   # 必須項目
-  #   # 備考: すべてのワーカータイプに適用される
-  #   image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/custom-emr-image:latest"
-  # }
-
-  #---------------------------------------
   # インタラクティブ設定
   #---------------------------------------
   # interactive_configuration {
@@ -248,6 +248,16 @@ resource "aws_emrserverless_application" "example" {
   #   # 設定可能な値: 15〜720分
   #   # 備考: EMR 7.0.0以降でサポート
   #   queue_timeout_minutes = 360
+  # }
+
+  #---------------------------------------
+  # コスト配分設定
+  #---------------------------------------
+  # job_level_cost_allocation_configuration {
+  #   # 設定内容: ジョブレベルのコスト配分を有効化
+  #   # 省略時: false（無効）
+  #   # 備考: 有効にすると個々のジョブ単位でコスト配分タグが付与される
+  #   enabled = false
   # }
 }
 

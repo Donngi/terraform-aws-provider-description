@@ -19,8 +19,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_acl
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-03
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -38,11 +38,11 @@ resource "aws_s3_bucket_acl" "example" {
   # 注意: この値を変更すると、新しいリソースが作成されます（既存のリソースは削除されます）
   bucket = "my-bucket-name"
 
-  # expected_bucket_owner (Optional, Forces new resource)
+  # expected_bucket_owner (Optional, Forces new resource, Deprecated)
   # 設定内容: バケットの予期される所有者のAWSアカウントIDを指定します。
   # 設定可能な値: 12桁のAWSアカウントID
   # 用途: バケット所有者の検証を行い、意図しないバケットへの操作を防止します
-  # 注意: 指定したアカウントIDとバケットの実際の所有者が異なる場合、エラーが発生します
+  # 注意: この属性は非推奨です。指定したアカウントIDとバケットの実際の所有者が異なる場合、エラーが発生します
   expected_bucket_owner = null
 
   # region (Optional)
@@ -95,7 +95,7 @@ resource "aws_s3_bucket_acl" "example" {
 
       # display_name (Optional, Deprecated)
       # 設定内容: 所有者の表示名を指定します。
-      # 注意: このフィールドは非推奨であり、オプションのcomputed属性です
+      # 注意: この属性は非推奨であり、オプションのcomputed属性です
       display_name = null
     }
 

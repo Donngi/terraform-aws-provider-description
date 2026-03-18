@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_ipam_resource_discovery
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-05
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -31,14 +31,12 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
   # 設定内容: IPAMリソースディスカバリーの説明を指定します。
   # 設定可能な値: 文字列
   # 省略時: 説明なし
-  # 用途: リソースディスカバリーの目的や用途を明示的に記録する際に使用
   description = "My IPAM Resource Discovery"
 
   # region (Optional)
   # 設定内容: このリソースを管理するリージョンを指定します。
   # 設定可能な値: 有効なAWSリージョンコード（例: ap-northeast-1, us-east-1）
   # 省略時: プロバイダー設定のリージョンを使用
-  # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   region = null
 
   #-------------------------------------------------------------
@@ -47,17 +45,11 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
 
   # operating_regions (Required, 最小1つ)
   # 設定内容: リソースディスカバリーがIPAM機能を有効にする対象リージョンを指定します。
-  # 用途:
-  #   - ロケールは、IPAMプールを割り当て可能にするリージョンを定義します
-  #   - IPAMプールは、リソースディスカバリーの動作リージョンと一致するロケールのみで作成可能
-  #   - VPCは、VPCのリージョンと一致するロケールを持つプールからのみ作成可能
   # 注意: プロバイダーブロックのリージョンを動作リージョンとして設定する必要があります
-  # 参考: https://docs.aws.amazon.com/vpc/latest/ipam/how-ipam-works.html
   operating_regions {
     # region_name (Required)
     # 設定内容: IPAMに追加するリージョンの名前を指定します。
     # 設定可能な値: 有効なAWSリージョン名（例: ap-northeast-1, us-east-1）
-    # 注意: プロバイダー設定のリージョンを必ず含める必要があります
     region_name = "ap-northeast-1"
   }
 
@@ -65,9 +57,23 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
   # operating_regions {
   #   region_name = "us-east-1"
   # }
-  #
-  # operating_regions {
-  #   region_name = "eu-west-1"
+
+  #-------------------------------------------------------------
+  # 組織ユニット除外設定
+  #-------------------------------------------------------------
+
+  # organizational_unit_exclusion (Optional)
+  # 設定内容: IPAMから除外する組織ユニット（OU）を指定します。
+  # IPAMがAWS Organizationsと統合されている場合、OU除外を追加すると、
+  # 該当OUのアカウントのIPアドレスをIPAMが管理しなくなります。
+  # 参考: https://docs.aws.amazon.com/vpc/latest/ipam/quotas-ipam.html
+  # organizational_unit_exclusion {
+  #   # organizations_entity_path (Required)
+  #   # 設定内容: AWS Organizationsのエンティティパスを指定します。
+  #   # 設定可能な値: AWS Organizations IDを「/」で区切ったパス文字列
+  #   #   パスの末尾に「/*」を付けると、すべての子OUが含まれます
+  #   #   例: "o-abc123/r-ab12/ou-ab12-11111111/*"
+  #   organizations_entity_path = "o-abc123/r-ab12/ou-ab12-11111111/*"
   # }
 
   #-------------------------------------------------------------
@@ -77,10 +83,7 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
   # tags (Optional)
   # 設定内容: リソースに割り当てるタグのマップを指定します。
   # 設定可能な値: キーと値のペアのマップ
-  # 関連機能: AWSリソースタグ付け
-  #   プロバイダーレベルのdefault_tags設定ブロックで定義されたタグと
-  #   一致するキーを持つタグは、プロバイダーレベルで定義されたものを上書きします。
-  #   - https://docs.aws.amazon.com/vpc/latest/ipam/tagging-ipam.html
+  # 省略時: タグなし（default_tagsのみ適用）
   tags = {
     Name        = "my-ipam-resource-discovery"
     Environment = "production"
@@ -92,12 +95,7 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
 
   # timeouts (Optional)
   # 設定内容: リソース操作のタイムアウト時間を指定します。
-  # 設定可能な値:
-  #   - create: 作成操作のタイムアウト（デフォルト値が使用されます）
-  #   - update: 更新操作のタイムアウト（デフォルト値が使用されます）
-  #   - delete: 削除操作のタイムアウト（デフォルト値が使用されます）
   # 省略時: Terraformのデフォルトタイムアウトが適用されます
-  # 用途: 大規模な環境やAPI制限が厳しい環境でタイムアウトエラーを防ぐ際に使用
   timeouts {
     create = "30m"
     update = "30m"
@@ -111,16 +109,9 @@ resource "aws_vpc_ipam_resource_discovery" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: IPAMリソースディスカバリーのAmazon Resource Name (ARN)
-#
 # - id: IPAMリソースディスカバリーのID
-#
 # - ipam_resource_discovery_region: リソースディスカバリーのホームリージョン
-#
-# - is_default: リソースディスカバリーがアカウントのデフォルトリソースディスカバリーか
-#               どうかを示すブール値
-#
+# - is_default: アカウントのデフォルトリソースディスカバリーかどうかを示すブール値
 # - owner_id: リソースディスカバリーを管理するアカウントのアカウントID
-#
-# - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ。
+# - tags_all: default_tagsから継承されたタグを含む全タグのマップ
 #---------------------------------------------------------------

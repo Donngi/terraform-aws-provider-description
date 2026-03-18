@@ -14,6 +14,9 @@
 # NOTE: aws_dynamodb_table_replica リソースと併用する場合、replica ブロックに
 #       lifecycle ignore_changes を設定することを推奨します。
 #
+# NOTE: GSI の autoscaling でドリフトが発生する場合は、実験的リソース
+#       aws_dynamodb_global_secondary_index の使用を検討してください。
+#
 # AWS公式ドキュメント:
 #   - DynamoDB 概要: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
 #   - テーブルの操作: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithTables.html
@@ -22,8 +25,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-22
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -71,7 +74,7 @@ resource "aws_dynamodb_table" "example" {
   # キー設定
   #-------------------------------------------------------------
 
-  # hash_key (Required, Forces new resource)
+  # hash_key (Optional, Forces new resource)
   # 設定内容: パーティションキー（ハッシュキー）として使用する属性名を指定します。
   # 注意: attribute ブロックでも同じ属性を定義する必要があります。
   hash_key = "UserId"
@@ -226,15 +229,39 @@ resource "aws_dynamodb_table" "example" {
     # 設定内容: インデックスの名前を指定します。
     name = "GameTitleIndex"
 
-    # hash_key (Required)
+    # hash_key (Optional, 非推奨)
     # 設定内容: GSI のパーティションキーとして使用する属性名を指定します。
-    # 注意: attribute ブロックで定義されている必要があります。
+    # 注意: 非推奨。key_schema の使用を推奨します。key_schema と排他的です。
+    #       attribute ブロックで定義されている必要があります。
     hash_key = "GameTitle"
 
-    # range_key (Optional)
+    # range_key (Optional, 非推奨)
     # 設定内容: GSI のソートキーとして使用する属性名を指定します。
-    # 注意: attribute ブロックで定義されている必要があります。
+    # 注意: 非推奨。key_schema の使用を推奨します。key_schema と排他的です。
+    #       attribute ブロックで定義されている必要があります。
     range_key = "TopScore"
+
+    # key_schema (Optional)
+    # 設定内容: GSI のキースキーマを定義します。マルチ属性キーパターンをサポートします。
+    # 注意: hash_key / range_key と排他的です。hash_key を指定しない場合は必須です。
+    #       HASH キーと RANGE キーをそれぞれ最大 4 つまで指定可能です。
+    #       参考: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.DesignPattern.MultiAttributeKeys.html
+    # key_schema {
+    #   # attribute_name (Required)
+    #   # 設定内容: キーとして使用する属性名を指定します。
+    #   attribute_name = "GameTitle"
+    #
+    #   # key_type (Required)
+    #   # 設定内容: キーの種類を指定します。
+    #   # 設定可能な値:
+    #   #   - "HASH": パーティションキー（最大 4 つ）
+    #   #   - "RANGE": ソートキー（最大 4 つ）
+    #   key_type = "HASH"
+    # }
+    # key_schema {
+    #   attribute_name = "TopScore"
+    #   key_type       = "RANGE"
+    # }
 
     # projection_type (Required)
     # 設定内容: インデックスに射影する属性のセットを指定します。
@@ -586,23 +613,13 @@ resource "aws_dynamodb_table" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: テーブルの Amazon Resource Name (ARN)
-#
 # - id: テーブル名（name と同じ値）
-#
-# - stream_arn: Table Stream の ARN
-#               stream_enabled = true の場合のみ利用可能
-#
+# - stream_arn: Table Stream の ARN（stream_enabled = true の場合のみ）
 # - stream_label: ストリームのタイムスタンプ（ISO 8601 形式）
 #                 stream_enabled = true の場合のみ利用可能
-#                 注意: 単独では一意識別子として不十分です。
-#                 AWS カスタマー ID、テーブル名と組み合わせることで一意になります。
-#
-# - tags_all: プロバイダーの default_tags 設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ
-#
+# - tags_all: default_tags を含む全タグのマップ
 # - replica.*.arn: レプリカの ARN
-#
 # - replica.*.stream_arn: レプリカの Table Stream の ARN
-#                         stream_enabled = true の場合のみ利用可能
+# - replica.*.stream_label: レプリカのストリームのタイムスタンプ
 #
 #---------------------------------------------------------------

@@ -2,9 +2,9 @@
 # aws_budgets_budget
 # AWS Budgetsリソース - コスト・使用量の予算管理と通知設定
 #
-# Provider Version: 6.28.0
+# Provider Version: 6.36.0
 # Terraform Registry: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/budgets_budget
-# Generated: 2026-02-11
+# Generated: 2026-03-18
 #
 # このリソースは、AWSのコストや使用量を監視するための予算を作成します。
 # 予算の上限設定、コストフィルター、通知アラートなどを構成できます。
@@ -12,11 +12,12 @@
 # NOTE: RI_UTILIZATIONまたはSAVINGS_PLANS_UTILIZATIONタイプの予算では、
 # cost_typesブロックの明示的な設定が必須です（デフォルト値と競合するため）。
 # RI_UTILIZATION予算では、サービスのcost_filterも必須です。
+# cost_filterとfilter_expressionは排他的であり、同時に指定できません。
 #-------
 
 resource "aws_budgets_budget" "example" {
   #-------
-  # 必須パラメータ
+  # 予算タイプ・期間設定
   #-------
 
   # 予算のタイプ
@@ -47,7 +48,6 @@ resource "aws_budgets_budget" "example" {
   # 予算名のプレフィックス（nameと排他的）
   # 設定内容: 予算名の接頭辞（Terraformが自動的にユニークな名前を生成）
   # 省略時: nameで指定された名前が使用される
-  # 備考: nameとname_prefixは同時に指定できない
   name_prefix = null
 
   #-------
@@ -57,7 +57,6 @@ resource "aws_budgets_budget" "example" {
   # 予算上限額
   # 設定内容: 予算の上限金額または使用量
   # 省略時: planned_limitまたはauto_adjust_dataで動的に設定する必要がある
-  # 備考: budget_typeがCOSTの場合は金額、USAGEの場合は使用量の数値
   limit_amount = "1000"
 
   # 予算上限の単位
@@ -79,6 +78,15 @@ resource "aws_budgets_budget" "example" {
   account_id = null
 
   #-------
+  # Billing View設定
+  #-------
+
+  # Billing ViewのARN
+  # 設定内容: AWS Billing and Cost Managementのビリングビュー（FOCUS形式）のARN
+  # 省略時: 標準のコストデータを使用
+  billing_view_arn = null
+
+  #-------
   # 期間設定
   #-------
 
@@ -93,15 +101,6 @@ resource "aws_budgets_budget" "example" {
   # 省略時: 制限なし（無期限）
   # フォーマット: YYYY-MM-DD_HH:MM（例: 2025-12-31_23:59）
   time_period_end = null
-
-  #-------
-  # Billing View設定
-  #-------
-
-  # Billing ViewのARN
-  # 設定内容: AWS Billing and Cost Managementのビリングビュー（FOCUS形式）のARN
-  # 省略時: 標準のコストデータを使用
-  billing_view_arn = null
 
   #-------
   # タグ設定
@@ -204,7 +203,6 @@ resource "aws_budgets_budget" "example" {
   #   # サブスクリプションを含める
   #   # 設定内容: リザーブドインスタンスやSavings Plansなどのサブスクリプション料金を含めるか
   #   # 省略時: true
-  #   # 備考: RI_UTILIZATIONやSAVINGS_PLANS_UTILIZATIONの予算では通常trueに設定
   #   include_subscription = true
   #
   #   # サポートコストを含める
@@ -225,13 +223,11 @@ resource "aws_budgets_budget" "example" {
   #   # 償却コストを使用
   #   # 設定内容: 前払い料金を期間全体に分散して計算するか
   #   # 省略時: false
-  #   # 備考: リザーブドインスタンスやSavings Plansのコストを月次で平準化する場合に有効
   #   use_amortized = false
   #
   #   # ブレンドコストを使用
   #   # 設定内容: 組織全体の平均レートを使用して計算するか
   #   # 省略時: false
-  #   # 備考: AWS Organizationsで一括請求を使用している場合に有効
   #   use_blended = false
   # }
 
@@ -239,6 +235,7 @@ resource "aws_budgets_budget" "example" {
   # コストフィルター設定（cost_filter）
   #-------
   # 特定のサービス、リージョン、タグなどで予算の対象を絞り込む
+  # filter_expressionと排他的（同時に使用不可）
 
   # cost_filter {
   #   # フィルター名
@@ -262,30 +259,119 @@ resource "aws_budgets_budget" "example" {
   #
   #   # フィルター値
   #   # 設定内容: フィルター条件に一致する値のリスト
-  #   # 備考:
-  #   #   - Serviceフィルターの例: "Amazon Elastic Compute Cloud - Compute"、"Amazon S3"
-  #   #   - TagKeyValueフィルターの形式: "タグキー$タグ値"（例: "Environment$production"）
   #   values = [
   #     "Amazon Elastic Compute Cloud - Compute",
   #   ]
   # }
+
+  #-------
+  # フィルター式設定（filter_expression）
+  #-------
+  # 高度なフィルタリング条件を論理演算子（AND/OR/NOT）で組み合わせて指定
+  # cost_filterと排他的（同時に使用不可）
+  # ネストの最大深度はAWS APIの制限により2段階まで
+
+  # filter_expression {
+  #   # ディメンションフィルター（単一条件の場合）
+  #   # 設定内容: ディメンションによるフィルタリング
+  #   # 備考: and/or/not/dimensions/tags/cost_categoriesのうち1つのみ指定可能
+  #   # dimensions {
+  #   #   # フィルターキー
+  #   #   # 設定内容: フィルタリングするディメンションの種類
+  #   #   # 設定可能な値: AZ、INSTANCE_TYPE、LINKED_ACCOUNT、OPERATION、PURCHASE_TYPE、
+  #   #   #   REGION、SERVICE、USAGE_TYPE、USAGE_TYPE_GROUP、RECORD_TYPE、
+  #   #   #   OPERATING_SYSTEM、TENANCY、SCOPE、PLATFORM、SUBSCRIPTION_ID、
+  #   #   #   LEGAL_ENTITY_NAME、DEPLOYMENT_OPTION、DATABASE_ENGINE、CACHE_ENGINE、
+  #   #   #   INSTANCE_TYPE_FAMILY、BILLING_ENTITY、RESERVATION_ID、RESOURCE_ID、
+  #   #   #   RIGHTSIZING_TYPE、SAVINGS_PLANS_TYPE、SAVINGS_PLAN_ARN、PAYMENT_OPTION、
+  #   #   #   AGREEMENT_END_DATE_TIME_AFTER、AGREEMENT_END_DATE_TIME_BEFORE
+  #   #   key = "SERVICE"
+  #   #
+  #   #   # フィルター値
+  #   #   # 設定内容: マッチさせる値のリスト（1つ以上必須）
+  #   #   values = ["Amazon Elastic Compute Cloud - Compute"]
+  #   #
+  #   #   # マッチオプション
+  #   #   # 設定内容: 値の比較方法を指定
+  #   #   # 設定可能な値: EQUALS、STARTS_WITH、ENDS_WITH、CONTAINS、
+  #   #   #   GREATER_THAN_OR_EQUAL、CASE_SENSITIVE、CASE_INSENSITIVE
+  #   #   # 省略時: デフォルトの比較方法が使用される
+  #   #   match_options = null
+  #   # }
   #
-  # # 複数のコストフィルターを組み合わせ可能（AND条件）
-  # cost_filter {
-  #   name = "Region"
-  #   values = [
-  #     "us-east-1",
-  #     "us-west-2",
-  #   ]
-  # }
+  #   # タグフィルター
+  #   # tags {
+  #   #   # タグキー
+  #   #   # 設定内容: フィルタリングするタグのキー名
+  #   #   key = "Environment"
+  #   #
+  #   #   # タグ値
+  #   #   # 設定内容: マッチさせるタグ値のリスト
+  #   #   values = ["Production"]
+  #   #
+  #   #   # マッチオプション
+  #   #   # 設定内容: 値の比較方法を指定
+  #   #   # 設定可能な値: EQUALS、STARTS_WITH、ENDS_WITH、CONTAINS、
+  #   #   #   GREATER_THAN_OR_EQUAL、CASE_SENSITIVE、CASE_INSENSITIVE
+  #   #   # 省略時: デフォルトの比較方法が使用される
+  #   #   match_options = null
+  #   # }
   #
-  # # タグベースのフィルター例
-  # cost_filter {
-  #   name = "TagKeyValue"
-  #   values = [
-  #     "Environment$production",
-  #     "Team$engineering",
-  #   ]
+  #   # コストカテゴリフィルター
+  #   # cost_categories {
+  #   #   # コストカテゴリキー
+  #   #   # 設定内容: フィルタリングするコストカテゴリのキー名
+  #   #   key = "Environment"
+  #   #
+  #   #   # コストカテゴリ値
+  #   #   # 設定内容: マッチさせるコストカテゴリ値のリスト
+  #   #   values = ["production"]
+  #   #
+  #   #   # マッチオプション
+  #   #   # 設定内容: 値の比較方法を指定
+  #   #   # 設定可能な値: EQUALS、STARTS_WITH、ENDS_WITH、CONTAINS、
+  #   #   #   GREATER_THAN_OR_EQUAL、CASE_SENSITIVE、CASE_INSENSITIVE
+  #   #   # 省略時: デフォルトの比較方法が使用される
+  #   #   match_options = null
+  #   # }
+  #
+  #   # AND条件（2つ以上のオペランドが必要）
+  #   # 各andブロックに1つのリーフフィルターを指定
+  #   # and {
+  #   #   dimensions {
+  #   #     key    = "SERVICE"
+  #   #     values = ["Amazon Elastic Compute Cloud - Compute"]
+  #   #   }
+  #   # }
+  #   # and {
+  #   #   tags {
+  #   #     key    = "Environment"
+  #   #     values = ["Production"]
+  #   #   }
+  #   # }
+  #
+  #   # OR条件（2つ以上のオペランドが必要）
+  #   # 各orブロックに1つのリーフフィルターを指定
+  #   # or {
+  #   #   dimensions {
+  #   #     key    = "SERVICE"
+  #   #     values = ["Amazon Elastic Compute Cloud - Compute"]
+  #   #   }
+  #   # }
+  #   # or {
+  #   #   dimensions {
+  #   #     key    = "SERVICE"
+  #   #     values = ["Amazon Relational Database Service"]
+  #   #   }
+  #   # }
+  #
+  #   # NOT条件（1つのフィルターを否定）
+  #   # not {
+  #   #   dimensions {
+  #   #     key    = "REGION"
+  #   #     values = ["us-west-2"]
+  #   #   }
+  #   # }
   # }
 
   #-------
@@ -304,7 +390,6 @@ resource "aws_budgets_budget" "example" {
   #
   #   # 閾値
   #   # 設定内容: 通知をトリガーする閾値（数値）
-  #   # 備考: threshold_typeがPERCENTAGEの場合は0-100の範囲、ABSOLUTE_VALUEの場合は実際の金額/使用量
   #   threshold = 80
   #
   #   # 閾値のタイプ
@@ -326,7 +411,6 @@ resource "aws_budgets_budget" "example" {
   #   # 省略時: subscriber_sns_topic_arnsを指定する必要がある
   #   subscriber_email_addresses = [
   #     "finance@example.com",
-  #     "devops@example.com",
   #   ]
   #
   #   # 通知先SNSトピックARN
@@ -335,15 +419,6 @@ resource "aws_budgets_budget" "example" {
   #   # subscriber_sns_topic_arns = [
   #   #   "arn:aws:sns:us-east-1:123456789012:budget-alerts",
   #   # ]
-  # }
-  #
-  # # 複数の通知設定が可能（異なる閾値で段階的に通知）
-  # notification {
-  #   comparison_operator        = "GREATER_THAN"
-  #   threshold                  = 100
-  #   threshold_type             = "PERCENTAGE"
-  #   notification_type          = "FORECASTED"
-  #   subscriber_email_addresses = ["urgent-alerts@example.com"]
   # }
 }
 
@@ -357,3 +432,4 @@ resource "aws_budgets_budget" "example" {
 # auto_adjust_data使用時の参照可能な属性:
 #   - last_auto_adjust_time: 最後に自動調整された日時
 #   - historical_options.lookback_available_periods: 実際に使用される参照期間数
+#-------

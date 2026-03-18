@@ -7,18 +7,22 @@
 # ストレージクラスへの移行、不完全なマルチパートアップロードの
 # 削除などのライフサイクルルールを管理します。
 #
-# 注意: このリソースはS3ディレクトリバケットでは使用できません。
+# 注意: S3バケットは単一のライフサイクル設定のみをサポートします。
+#       同一バケットに対して複数のaws_s3_bucket_lifecycle_configurationを
+#       宣言すると設定の永続的な差分が発生します。
 #       バージョニング対応バケットでは非現行バージョンのルールも設定できます。
 #
 # AWS公式ドキュメント:
 #   - S3ライフサイクル設定:
 #     https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html
+#   - ライフサイクル設定要素:
+#     https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -39,9 +43,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   # オプション設定
   #-------------------------------------------------------------
 
-  # expected_bucket_owner (Optional)
+  # expected_bucket_owner (Optional, Deprecated)
   # 設定内容: バケットを所有するAWSアカウントIDを指定します。
   #           指定したアカウントIDがバケットの所有者と一致しない場合はエラーになります。
+  #           非推奨属性です。変更時はリソースの再作成が発生します。
   # 設定可能な値: AWSアカウントID（12桁の数字）
   # 省略時: 検証なし（バケット所有者の確認をスキップ）
   expected_bucket_owner = null
@@ -56,10 +61,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   # transition_default_minimum_object_size (Optional)
   # 設定内容: ライフサイクルルールによるトランジションの対象となる
   #           オブジェクトの最小サイズのデフォルト値を指定します。
+  #           filterでobject_size_greater_thanやobject_size_less_thanを
+  #           指定した場合はそちらが優先されます。
   # 設定可能な値:
   #   - "all_storage_classes_128K": 全ストレージクラスで128KBを最小サイズとする
   #   - "varies_by_storage_class": ストレージクラスごとに異なる最小サイズを適用する
-  # 省略時: varies_by_storage_class
+  # 省略時: all_storage_classes_128K
   transition_default_minimum_object_size = null
 
   #-------------------------------------------------------------
@@ -99,7 +106,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
       # prefix (Optional)
       # 設定内容: ルールを適用するオブジェクトのキー名プレフィックスを指定します。
       # 設定可能な値: 任意の文字列（例: "logs/", "images/"）
-      # 省略時: プレフィックスによるフィルタリングなし
+      # 省略時: 空文字列（""）
       prefix = "logs/"
 
       # object_size_greater_than (Optional)
@@ -143,6 +150,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
 
         # object_size_greater_than (Optional)
         # 設定内容: AND条件のオブジェクト最小サイズ（バイト）を指定します。
+        #           transition_default_minimum_object_sizeを指定しない場合、
+        #           全ストレージクラスで128000バイト（128KB）がデフォルトとなります。
         # 設定可能な値: 0以上の整数（バイト単位）
         # 省略時: サイズによる下限フィルタリングなし
         object_size_greater_than = null
@@ -155,6 +164,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
 
         # tags (Optional)
         # 設定内容: AND条件のタグセットをマップ形式で指定します。
+        #           指定した全てのタグがオブジェクトに存在する場合にルールが適用されます。
+        #           設定する場合は少なくとも1つのキーバリューペアが必要です。
         # 設定可能な値: キーと値のペアのマップ
         # 省略時: タグによるフィルタリングなし
         tags = {
@@ -174,20 +185,21 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
     # 省略時: オブジェクトの自動削除なし
     expiration {
       # date (Optional)
-      # 設定内容: オブジェクトを削除する日付をISO 8601形式で指定します。
-      # 設定可能な値: ISO 8601形式の日付文字列（例: "2025-12-31T00:00:00Z"）
+      # 設定内容: オブジェクトを削除する日付をRFC3339形式で指定します。
+      # 設定可能な値: RFC3339形式の日付文字列（例: "2025-12-31"）
       # 省略時: 日付による期限切れなし
       date = null
 
       # days (Optional)
       # 設定内容: オブジェクト作成からの経過日数でオブジェクトを削除します。
-      # 設定可能な値: 1以上の整数
+      # 設定可能な値: 1以上の正の整数
       # 省略時: 日数による期限切れなし
       days = 365
 
       # expired_object_delete_marker (Optional)
       # 設定内容: バージョニングが有効なバケットで、
       #           非現行バージョンが存在しない削除マーカーを自動削除するかどうかを指定します。
+      #           dateおよびdaysとは同時に指定できません。
       # 設定可能な値: true（自動削除する）, false（自動削除しない）
       # 省略時: false
       expired_object_delete_marker = null
@@ -204,13 +216,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
     noncurrent_version_expiration {
       # noncurrent_days (Required)
       # 設定内容: オブジェクトが非現行バージョンになってから削除されるまでの日数を指定します。
-      # 設定可能な値: 1以上の整数
+      # 設定可能な値: 1以上の正の整数
       noncurrent_days = 90
 
       # newer_noncurrent_versions (Optional)
       # 設定内容: 保持する非現行バージョンの数を指定します。
       #           指定した数を超えた古い非現行バージョンが削除されます。
-      # 設定可能な値: 1以上の整数
+      # 設定可能な値: 1以上の正の整数
       # 省略時: バージョン数による制限なし
       newer_noncurrent_versions = null
     }
@@ -237,13 +249,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
 
       # days (Optional)
       # 設定内容: オブジェクト作成からの経過日数でストレージクラスを移行します。
-      # 設定可能な値: 0以上の整数
-      # 省略時: 日数による移行トリガーなし
+      #           dateとは同時に指定できません。
+      #           daysもdateも指定しない場合はデフォルトで0になります。
+      # 設定可能な値: 0以上の正の整数
+      # 省略時: 0
       days = 30
 
       # date (Optional)
-      # 設定内容: ストレージクラス移行を実行する日付をISO 8601形式で指定します。
-      # 設定可能な値: ISO 8601形式の日付文字列（例: "2025-06-01T00:00:00Z"）
+      # 設定内容: ストレージクラス移行を実行する日付をRFC3339形式で指定します。
+      #           daysとは同時に指定できません。
+      # 設定可能な値: RFC3339形式の日付文字列（例: "2025-06-01"）
       # 省略時: 日付による移行トリガーなし
       date = null
     }
@@ -271,13 +286,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
       # noncurrent_days (Required)
       # 設定内容: オブジェクトが非現行バージョンになってから
       #           移行されるまでの日数を指定します。
-      # 設定可能な値: 1以上の整数
+      # 設定可能な値: 1以上の正の整数
       noncurrent_days = 30
 
       # newer_noncurrent_versions (Optional)
       # 設定内容: 保持する非現行バージョンの数を指定します。
       #           指定した数を超えた古い非現行バージョンが移行されます。
-      # 設定可能な値: 1以上の整数
+      # 設定可能な値: 1以上の正の整数
       # 省略時: バージョン数による制限なし
       newer_noncurrent_versions = null
     }
@@ -309,13 +324,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
   timeouts {
     # create (Optional)
     # 設定内容: リソース作成操作のタイムアウト時間を指定します。
-    # 設定可能な値: 時間を表す文字列（例: "30s", "5m", "2h"）
+    # 設定可能な値: 時間を表す文字列（例: "30s", "5m", "2h45m"）
     # 省略時: プロバイダーデフォルト値を使用
     create = null
 
     # update (Optional)
     # 設定内容: リソース更新操作のタイムアウト時間を指定します。
-    # 設定可能な値: 時間を表す文字列（例: "30s", "5m", "2h"）
+    # 設定可能な値: 時間を表す文字列（例: "30s", "5m", "2h45m"）
     # 省略時: プロバイダーデフォルト値を使用
     update = null
   }
@@ -326,6 +341,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "example" {
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - id: バケット名（バケット名とexpected_bucket_ownerの組み合わせの場合あり）
+# - id: バケット名（expected_bucket_ownerを指定した場合は
+#        バケット名とexpected_bucket_ownerがカンマ区切りで結合された値）
 #
 #---------------------------------------------------------------

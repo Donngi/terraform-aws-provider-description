@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fsx_windows_file_system
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -25,7 +25,7 @@
 
 resource "aws_fsx_windows_file_system" "example" {
   #-------------------------------------------------------------
-  # 基本設定（必須）
+  # 基本設定
   #-------------------------------------------------------------
 
   # subnet_ids (Required)
@@ -37,7 +37,7 @@ resource "aws_fsx_windows_file_system" "example" {
 
   # throughput_capacity (Required)
   # 設定内容: ファイルシステムのスループット容量（MB/秒）を指定します。
-  # 設定可能な値: 8〜2048の整数。有効な値の詳細はAWSドキュメントを参照
+  # 設定可能な値: 8〜100000の整数。有効な値の詳細はAWSドキュメントを参照
   # 参考: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/performance.html
   throughput_capacity = 32
 
@@ -98,7 +98,7 @@ resource "aws_fsx_windows_file_system" "example" {
   # 設定可能な値:
   #   - SSDストレージ: 最小32 GiB、最大65536 GiB
   #   - HDDストレージ: 最小2000 GiB、最大65536 GiB
-  # 省略時: バックアップからファイルシステムを作成する場合以外は必須です。
+  # 注意: バックアップからファイルシステムを作成する場合以外は必須です。
   storage_capacity = 32
 
   # storage_type (Optional)
@@ -168,7 +168,7 @@ resource "aws_fsx_windows_file_system" "example" {
   kms_key_id = null
 
   #-------------------------------------------------------------
-  # DNS エイリアス設定
+  # DNSエイリアス設定
   #-------------------------------------------------------------
 
   # aliases (Optional)
@@ -212,7 +212,6 @@ resource "aws_fsx_windows_file_system" "example" {
   # audit_log_configuration (Optional)
   # 設定内容: Amazon FSx for Windows File Serverのファイル、フォルダ、ファイル共有への
   #           ユーザーアクセスを監査・ログに記録する設定ブロックです。
-  # 参考: https://docs.aws.amazon.com/fsx/latest/APIReference/API_WindowsAuditLogConfiguration.html
   audit_log_configuration {
 
     # audit_log_destination (Optional)
@@ -229,7 +228,7 @@ resource "aws_fsx_windows_file_system" "example" {
     # 設定内容: ファイルおよびフォルダへのアクセスに対してAmazon FSxがログに記録する
     #           試行タイプを指定します。
     # 設定可能な値:
-    #   - "DISABLED": ログを記録しない（デフォルト）
+    #   - "DISABLED": ログを記録しない
     #   - "SUCCESS_ONLY": 成功したアクセスのみを記録
     #   - "FAILURE_ONLY": 失敗したアクセスのみを記録
     #   - "SUCCESS_AND_FAILURE": 成功・失敗の両方を記録
@@ -240,7 +239,7 @@ resource "aws_fsx_windows_file_system" "example" {
     # 設定内容: ファイル共有へのアクセスに対してAmazon FSxがログに記録する
     #           試行タイプを指定します。
     # 設定可能な値:
-    #   - "DISABLED": ログを記録しない（デフォルト）
+    #   - "DISABLED": ログを記録しない
     #   - "SUCCESS_ONLY": 成功したアクセスのみを記録
     #   - "FAILURE_ONLY": 失敗したアクセスのみを記録
     #   - "SUCCESS_AND_FAILURE": 成功・失敗の両方を記録
@@ -254,7 +253,6 @@ resource "aws_fsx_windows_file_system" "example" {
 
   # disk_iops_configuration (Optional)
   # 設定内容: Amazon FSx for Windows File ServerのSSD IOPSを設定するブロックです。
-  # 参考: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/managing-storage-configuration.html
   disk_iops_configuration {
 
     # mode (Optional)
@@ -299,19 +297,28 @@ resource "aws_fsx_windows_file_system" "example" {
   #   # 設定可能な値: FQDNの文字列（例: corp.example.com）
   #   domain_name = "corp.example.com"
   #
-  #   # username (Required)
+  #   # username (Optional)
   #   # 設定内容: Amazon FSxがADドメインに参加するために使用するサービスアカウントの
   #   #           ユーザー名を指定します。
   #   # 設定可能な値: 有効なADユーザー名の文字列
+  #   # 注意: domain_join_service_account_secret と排他的（どちらか一方のみ指定可能）。
   #   username = "Admin"
   #
-  #   # password (Required, Sensitive)
+  #   # password (Optional, Sensitive)
   #   # 設定内容: Amazon FSxがADドメインに参加するために使用するサービスアカウントの
   #   #           パスワードを指定します。
   #   # 設定可能な値: パスワード文字列
   #   # 注意: センシティブな値です。プレーンテキストでの記述は避け、変数または
   #   #       Secrets Managerを利用することを推奨します。
+  #   #       domain_join_service_account_secret と排他的（どちらか一方のみ指定可能）。
   #   password = var.ad_password
+  #
+  #   # domain_join_service_account_secret (Optional)
+  #   # 設定内容: セルフマネージドADドメインのサービスアカウント資格情報を含む
+  #   #           AWS Secrets ManagerシークレットのARNを指定します。
+  #   # 設定可能な値: 有効なSecrets ManagerシークレットARN
+  #   # 注意: username および password と排他的（どちらか一方のみ指定可能）。
+  #   domain_join_service_account_secret = null
   #
   #   # file_system_administrators_group (Optional)
   #   # 設定内容: ファイルシステムの管理者権限を持つドメイングループの名前を指定します。

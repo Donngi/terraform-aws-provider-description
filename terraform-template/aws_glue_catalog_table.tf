@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_catalog_table
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -430,6 +430,174 @@ resource "aws_glue_catalog_table" "example" {
       # 設定可能な値: Icebergテーブルバージョンの文字列
       # 省略時: "2"（Iceberg v2）
       version = "2"
+
+      #---------------------------------------------------------
+      # Icebergテーブル入力設定
+      #---------------------------------------------------------
+      # Icebergテーブルのスキーマ、パーティション、ソート順、プロパティ等を設定します。
+
+      iceberg_table_input {
+        # location (Required)
+        # 設定内容: Icebergテーブルデータが格納されるS3の場所を指定します。
+        # 設定可能な値: S3 URI（最大2056文字）
+        location = "s3://my-bucket/iceberg-table/"
+
+        # properties (Optional)
+        # 設定内容: テーブルのプロパティおよび設定をキーと値のペアで指定します。
+        # 設定可能な値: 文字列のマップ
+        properties = {}
+
+        #-------------------------------------------------------
+        # Icebergスキーマ設定
+        #-------------------------------------------------------
+        # Icebergテーブルの構造、フィールド型、メタデータを定義します。
+
+        schema {
+          # schema_id (Optional)
+          # 設定内容: Icebergテーブルのスキーマ進化履歴におけるスキーマバージョンの一意識別子を指定します。
+          # 設定可能な値: 0以上の整数
+          schema_id = 0
+
+          # type (Optional)
+          # 設定内容: スキーマ構造のルート型を指定します。
+          # 設定可能な値: "struct"
+          type = "struct"
+
+          # identifier_field_ids (Optional)
+          # 設定内容: テーブル内のレコードを一意に識別するフィールドIDのリストを指定します。
+          # 設定可能な値: フィールドIDの数値リスト
+          # 注意: 行レベル操作や重複排除に使用されます。
+          identifier_field_ids = []
+
+          # fields (Required)
+          # 設定内容: テーブルスキーマを構成するフィールド定義のリストです。
+          # 1つ以上のfieldsブロックが必要です。
+
+          fields {
+            # id (Required)
+            # 設定内容: Icebergテーブルスキーマ内のフィールドの一意識別子を指定します。
+            # 設定可能な値: 正の整数
+            # 注意: スキーマ進化やフィールド追跡に使用されます。
+            id = 1
+
+            # name (Required)
+            # 設定内容: フィールドの名前を指定します。
+            # 設定可能な値: 1〜1024文字の文字列
+            name = "transaction_id"
+
+            # required (Required)
+            # 設定内容: フィールドが必須（非null）か任意（null許容）かを指定します。
+            # 設定可能な値:
+            #   - true: 必須（non-nullable）
+            #   - false: 任意（nullable）
+            required = true
+
+            # type (Required)
+            # 設定内容: フィールドのデータ型をJSON文字列で指定します。
+            # 設定可能な値: "string", "long", "int", "float", "double",
+            #              "boolean", "date", "timestamp", "decimal(10,2)" 等
+            type = "\"string\""
+
+            # doc (Optional)
+            # 設定内容: フィールドの目的や使用方法に関する説明テキストを指定します。
+            # 設定可能な値: 0〜255文字の文字列
+            doc = null
+
+            # initial_default (Optional)
+            # 設定内容: スキーマにフィールドが追加される前に書き込まれたレコードのデフォルト値をJSON形式で指定します。
+            # 設定可能な値: JSON文字列
+            initial_default = null
+
+            # write_default (Optional)
+            # 設定内容: スキーマにフィールドが追加された後、値が指定されない場合のデフォルト値をJSON形式で指定します。
+            # 設定可能な値: JSON文字列
+            write_default = null
+          }
+
+          fields {
+            id       = 2
+            name     = "transaction_date"
+            required = true
+            type     = "\"date\""
+          }
+        }
+
+        #-------------------------------------------------------
+        # Icebergパーティション仕様設定
+        #-------------------------------------------------------
+        # Icebergテーブルデータのパーティショニング方法を定義します。
+
+        partition_spec {
+          # spec_id (Optional)
+          # 設定内容: Icebergテーブルのメタデータ履歴におけるパーティション仕様の一意識別子を指定します。
+          # 設定可能な値: 0以上の整数
+          spec_id = 0
+
+          # fields (Required)
+          # 設定内容: テーブルデータのパーティション方法を定義するフィールドのリストです。
+          # 1つ以上のfieldsブロックが必要です。
+
+          fields {
+            # name (Required)
+            # 設定内容: パーティションフィールドの名前を指定します。
+            # 設定可能な値: 1〜1024文字の文字列
+            name = "by_year"
+
+            # source_id (Required)
+            # 設定内容: パーティションフィールドの元となるテーブルスキーマのソースフィールドIDを指定します。
+            # 設定可能な値: スキーマのfieldsで定義したフィールドのid値
+            source_id = 2
+
+            # transform (Required)
+            # 設定内容: ソースフィールドに適用する変換関数を指定します。
+            # 設定可能な値: "identity", "bucket", "truncate", "year", "month", "day", "hour"
+            transform = "year"
+
+            # field_id (Optional)
+            # 設定内容: Icebergテーブルのパーティション仕様内でのフィールドの一意識別子を指定します。
+            # 設定可能な値: 正の整数
+            field_id = null
+          }
+        }
+
+        #-------------------------------------------------------
+        # Icebergソート順設定
+        #-------------------------------------------------------
+        # パーティション内のデータの並び順を定義し、クエリパフォーマンスを最適化します。
+
+        sort_order {
+          # order_id (Required)
+          # 設定内容: Icebergテーブルのメタデータ内でのソート順仕様の一意識別子を指定します。
+          # 設定可能な値: 正の整数
+          order_id = 1
+
+          # fields (Required)
+          # 設定内容: ソート順序を定義するフィールドのリストです。
+          # 1つ以上のfieldsブロックが必要です。
+
+          fields {
+            # source_id (Required)
+            # 設定内容: ソート対象のテーブルスキーマのソースフィールドIDを指定します。
+            # 設定可能な値: スキーマのfieldsで定義したフィールドのid値
+            source_id = 1
+
+            # direction (Required)
+            # 設定内容: ソート方向を指定します。
+            # 設定可能な値: "asc"（昇順）, "desc"（降順）
+            direction = "asc"
+
+            # null_order (Required)
+            # 設定内容: null値の並び順を指定します。
+            # 設定可能な値: "nulls-first"（先頭）, "nulls-last"（末尾）
+            null_order = "nulls-last"
+
+            # transform (Required)
+            # 設定内容: ソート前にソースフィールドに適用する変換関数を指定します。
+            # 設定可能な値: "identity", "bucket", "truncate" 等
+            transform = "none"
+          }
+        }
+      }
     }
   }
 
@@ -458,6 +626,88 @@ resource "aws_glue_catalog_table" "example" {
     # 設定内容: ターゲットテーブルが存在するリージョンを指定します。
     # 設定可能な値: 有効なAWSリージョンコード（例: us-east-1, ap-northeast-1）
     region = null
+  }
+
+  #-------------------------------------------------------------
+  # ビュー定義設定
+  #-------------------------------------------------------------
+  # ビューの定義情報を設定します。ビューの方言、クエリ、
+  # マテリアライズドビューの設定などを含みます。
+
+  view_definition {
+    # definer (Optional)
+    # 設定内容: SQLにおけるビューの定義者を指定します。
+    # 設定可能な値: 任意の文字列
+    definer = null
+
+    # is_protected (Optional)
+    # 設定内容: クエリ計画時にユーザー指定の操作をビューの論理プランにプッシュしないようにエンジンに指示するかどうかを指定します。
+    # 設定可能な値:
+    #   - true: 操作のプッシュを抑止（エンジンが保証するかは実装依存）
+    #   - false: 通常の最適化を許可
+    is_protected = null
+
+    # last_refresh_type (Optional)
+    # 設定内容: マテリアライズドビューの最後のリフレッシュの種類を指定します。
+    # 設定可能な値: "Full"（完全リフレッシュ）, "Incremental"（差分リフレッシュ）
+    last_refresh_type = null
+
+    # refresh_seconds (Optional)
+    # 設定内容: マテリアライズドビューの自動リフレッシュ間隔を秒単位で指定します。
+    # 設定可能な値: 正の整数
+    refresh_seconds = null
+
+    # sub_objects (Optional)
+    # 設定内容: マテリアライズドビューを構成するベーステーブルのARNのリストを指定します。
+    # 設定可能な値: テーブルARNの文字列リスト
+    sub_objects = []
+
+    # sub_object_version_ids (Optional)
+    # 設定内容: マテリアライズドビューが参照するApache Icebergテーブルバージョンのリストを指定します。
+    # 設定可能な値: バージョンIDの数値リスト
+    sub_object_version_ids = []
+
+    # view_version_id (Optional)
+    # 設定内容: ビューのバージョンを識別するIDを指定します。マテリアライズドビューの場合はIcebergテーブルのスナップショットIDです。
+    # 設定可能な値: 整数
+    view_version_id = null
+
+    # view_version_token (Optional)
+    # 設定内容: Apache IcebergテーブルのバージョンIDを指定します。
+    # 設定可能な値: 文字列
+    view_version_token = null
+
+    #-----------------------------------------------------------
+    # ビュー表現設定
+    #-----------------------------------------------------------
+    # ビューの方言ごとの表現を定義します。複数のrepresentationsブロックを指定できます。
+
+    representations {
+      # dialect (Optional)
+      # 設定内容: 特定の表現のエンジンタイプを指定します。
+      # 設定可能な値: "REDSHIFT", "ATHENA", "SPARK"
+      dialect = "ATHENA"
+
+      # dialect_version (Optional)
+      # 設定内容: 特定の表現のエンジンバージョンを指定します。
+      # 設定可能な値: バージョン文字列
+      dialect_version = null
+
+      # validation_connection (Optional)
+      # 設定内容: ビューの特定の表現を検証するために使用される接続名を指定します。
+      # 設定可能な値: Glue接続名の文字列
+      validation_connection = null
+
+      # view_original_text (Optional)
+      # 設定内容: ビューを記述する元のSQLクエリを指定します。
+      # 設定可能な値: SQL文字列
+      view_original_text = null
+
+      # view_expanded_text (Optional)
+      # 設定内容: 展開されたリソースARNを含むビューのSQLクエリを指定します。
+      # 設定可能な値: SQL文字列
+      view_expanded_text = null
+    }
   }
 }
 

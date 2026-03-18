@@ -19,8 +19,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/acmpca_certificate_authority
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -222,6 +222,12 @@ resource "aws_acmpca_certificate_authority" "example" {
       # 用途: S3バケット名を公開したくない場合に使用します。
       custom_cname = "crl.example.com"
 
+      # custom_path (Optional)
+      # 設定内容: S3内のCRLのカスタムパスを指定します。指定した場合、CRLは s3://<s3_bucket_name>/<custom_path>/<crl_file> に書き込まれます。
+      # 設定可能な値: 0から253文字の文字列（パターン: [-a-zA-Z0-9;?:@&=+$,%_.!~*()']+(/[-a-zA-Z0-9;?:@&=+$,%_.!~*()']+)*）
+      # 省略時: S3バケットのルートにCRLが配置されます
+      custom_path = null
+
       # s3_object_acl (Optional)
       # 設定内容: CRLがパブリックに読み取り可能か、S3バケット内でプライベートに保持されるかを指定します。
       # 設定可能な値:
@@ -267,11 +273,6 @@ resource "aws_acmpca_certificate_authority" "example" {
     Environment = "production"
   }
 
-  # tags_all (Optional, Computed)
-  # 設定内容: プロバイダーのdefault_tagsから継承されたタグを含むすべてのタグのマップを指定します。
-  # 注意: 通常は明示的に設定する必要はありません。computed属性として自動的に設定されます。
-  tags_all = null
-
   #-------------------------------------------------------------
   # Timeouts設定（オプション）
   #-------------------------------------------------------------
@@ -291,23 +292,13 @@ resource "aws_acmpca_certificate_authority" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - id: 認証局のARN
-#
 # - arn: 認証局のAmazon Resource Name (ARN)
-#
-# - certificate: Base64エンコードされた認証局（CA）証明書
-#              注意: CA証明書がインポートされた後にのみ利用可能です。
-#
-# - certificate_chain: 中間証明書を含み、プライベートCA証明書の署名に使用した
-#                     オンプレミス証明書までチェーンする、Base64エンコードされた証明書チェーン
-#                     注意: プライベートCA証明書は含まれません。CA証明書がインポートされた後にのみ利用可能です。
-#
-# - certificate_signing_request: プライベートCA証明書用のBase64 PEMエンコードされた
-#                               証明書署名リクエスト（CSR）
-#
-# - not_after: 認証局が有効でなくなる日時
-#             注意: CA証明書がインポートされた後にのみ利用可能です。
-#
-# - not_before: 認証局が有効になる日時
-#              注意: CA証明書がインポートされた後にのみ利用可能です。
+# - certificate: Base64エンコードされたCA証明書（CA証明書インポート後に利用可能）
+# - certificate_chain: 中間証明書を含むBase64エンコードされた証明書チェーン
+# - certificate_signing_request: Base64 PEMエンコードされたCSR
+# - not_after: 認証局が有効でなくなる日時（CA証明書インポート後に利用可能）
+# - not_before: 認証局が有効になる日時（CA証明書インポート後に利用可能）
+# - serial: 認証局のシリアル番号（CA証明書インポート後に利用可能）
+# - tags_all: default_tagsを含む全タグのマップ
 #
 #---------------------------------------------------------------

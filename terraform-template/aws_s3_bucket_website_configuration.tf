@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_website_configuration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -32,7 +32,7 @@ resource "aws_s3_bucket_website_configuration" "example" {
   # 設定可能な値: 有効なS3バケット名
   bucket = "my-static-website-bucket"
 
-  # expected_bucket_owner (Optional, Forces new resource)
+  # expected_bucket_owner (Optional, Forces new resource, Deprecated)
   # 設定内容: バケットを所有すると期待するAWSアカウントIDを指定します。
   # 設定可能な値: 12桁のAWSアカウントID
   # 省略時: バケット所有者の確認を行いません。
@@ -57,7 +57,7 @@ resource "aws_s3_bucket_website_configuration" "example" {
   # index_document (Optional)
   # 設定内容: ウェブサイトのインデックスドキュメントの設定ブロックです。
   # 注意: redirect_all_requests_to を指定しない場合は必須です。
-  #       redirect_all_requests_to、routing_rule と同時指定不可。
+  #       redirect_all_requests_to と同時指定不可。
   # 参考: https://docs.aws.amazon.com/AmazonS3/latest/userguide/IndexDocumentSupport.html
   index_document {
 

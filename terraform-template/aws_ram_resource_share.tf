@@ -29,8 +29,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ram_resource_share
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-04
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -59,7 +59,7 @@ resource "aws_ram_resource_share" "example" {
   # 設定内容: AWS Organizations 外のプリンシパルに対してリソース共有を許可するかを指定します。
   # 設定可能な値:
   #   - true: AWS Organizations 外部のAWSアカウントとリソースを共有可能
-  #   - false (デフォルト): AWS Organizations 内のアカウントとのみ共有可能
+  #   - false: AWS Organizations 内のアカウントとのみ共有可能
   # 省略時: false が設定されます
   # 注意: 外部アカウントと共有する場合、受信側が明示的に招待を承認する必要があります
   # 関連機能: RAM 外部プリンシパル共有
@@ -83,10 +83,26 @@ resource "aws_ram_resource_share" "example" {
   #   AWSが管理する権限ポリシー。リソースタイプごとに異なる権限を定義可能。
   #   デフォルト権限は読み取り専用または基本的な操作権限を提供。
   #   - https://docs.aws.amazon.com/ram/latest/userguide/permissions.html
-  # 例:
-  #   - Subnet の読み取り専用権限: "arn:aws:ram::aws:permission/AWSRAMDefaultPermissionSubnet"
-  #   - Transit Gateway の権限: "arn:aws:ram::aws:permission/AWSRAMDefaultPermissionTransitGateway"
   permission_arns = null
+
+  #-------------------------------------------------------------
+  # リソース共有構成
+  #-------------------------------------------------------------
+
+  # resource_share_configuration (Optional)
+  # 設定内容: Resource Share の構成設定を指定するブロックです。
+  # 用途: アカウントが組織を離脱した際のリソース共有動作を制御します。
+  resource_share_configuration {
+    # retain_sharing_on_account_leave_organization (Optional, Computed)
+    # 設定内容: アカウントが AWS Organizations を離脱した際にリソース共有へのアクセスを維持するかを指定します。
+    # 設定可能な値:
+    #   - true: 組織離脱後もコンシューマーアカウントがリソース共有へのアクセスを維持
+    #   - false: 組織離脱時にリソース共有へのアクセスを自動的に取り消し
+    # 省略時: AWSのデフォルト動作に従います
+    # 注意: セキュリティポリシーに応じて適切に設定してください。
+    #       組織外のアカウントにリソースアクセスが残ることを防ぎたい場合は false を推奨。
+    retain_sharing_on_account_leave_organization = null
+  }
 
   #-------------------------------------------------------------
   # リージョン設定
@@ -117,16 +133,6 @@ resource "aws_ram_resource_share" "example" {
     Environment = "production"
     Purpose     = "cross-account-resource-sharing"
   }
-
-  # tags_all (Optional, Computed)
-  # 設定内容: プロバイダーの default_tags から継承されるタグを含む全タグのマップ
-  # 注意: 通常は明示的に設定する必要はありません。Terraformが自動管理します
-  tags_all = null
-
-  # id (Optional, Computed)
-  # 設定内容: リソースのID。通常はARNと同じ値
-  # 注意: 通常は明示的に設定する必要はありません。Terraformが自動管理します
-  id = null
 
   #-------------------------------------------------------------
   # タイムアウト設定

@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_domain_name
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -43,6 +43,21 @@ resource "aws_apigatewayv2_domain_name" "example" {
   # 省略時: プロバイダー設定のリージョンを使用
   # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   region = null
+
+  #-------------------------------------------------------------
+  # ルーティング設定
+  #-------------------------------------------------------------
+
+  # routing_mode (Optional)
+  # 設定内容: ドメイン名のトラフィックルーティングモードを指定します。
+  # 設定可能な値:
+  #   - "API_MAPPING_ONLY": APIマッピングのみでルーティング（従来の動作）
+  #   - "ROUTING_RULE_ONLY": ルーティングルールのみでルーティング
+  #   - "ROUTING_RULE_THEN_API_MAPPING": ルーティングルールを優先し、マッチしない場合はAPIマッピングにフォールバック
+  # 省略時: "API_MAPPING_ONLY"
+  # 注意: ルーティングルール（aws_apigatewayv2_routing_rule）を使用する場合は
+  #       "ROUTING_RULE_ONLY" または "ROUTING_RULE_THEN_API_MAPPING" を指定してください。
+  routing_mode = null
 
   #-------------------------------------------------------------
   # ドメイン名設定 (Required)
@@ -79,7 +94,7 @@ resource "aws_apigatewayv2_domain_name" "example" {
     # ip_address_type (Optional)
     # 設定内容: ドメイン名を呼び出せるIPアドレスタイプを指定します。
     # 設定可能な値:
-    #   - "ipv4" (デフォルト): IPv4アドレスのみ許可
+    #   - "ipv4": IPv4アドレスのみ許可
     #   - "dualstack": IPv4とIPv6の両方を許可
     # 省略時: "ipv4"
     ip_address_type = "ipv4"

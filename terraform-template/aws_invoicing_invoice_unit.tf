@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/invoicing_invoice_unit
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 #
 # NOTE:
 #   - このリソースはAWS管理アカウントでのみ作成可能。メンバーアカウントからは操作できない

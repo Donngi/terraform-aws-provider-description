@@ -11,16 +11,19 @@
 #   競合するため、同時に使用しないでください
 # - SSE-KMSを使用する場合はKMSキーのポリシー設定が必要です
 # - Bucket Key（bucket_key_enabled = true）を有効にすることでKMSコスト削減が可能です
-# - S3ディレクトリバケット（Express One Zone）でも利用可能です
+# - このリソースを削除するとバケットはAmazon S3のデフォルト暗号化にリセットされます
+# - 2026年3月以降、新規バケットではSSE-Cが自動的にブロックされます。
+#   blocked_encryption_types引数でこの動作を管理できます
 #
 # AWS公式ドキュメント:
 #   - SSE: https://docs.aws.amazon.com/AmazonS3/latest/userguide/serv-side-encryption.html
+#   - SSE-C変更FAQ: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-s3-c-encryption-setting-faq.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -32,16 +35,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
   # 基本設定
   #-------------------------------------------------------------
 
-  # bucket (Required)
-  # 設定内容: SSE設定を適用するS3バケットの名前またはARNを指定します。
+  # bucket (Required, Forces new resource)
+  # 設定内容: SSE設定を適用するS3バケットのID（名前）を指定します。
   # 設定可能な値: 既存のS3バケット名またはARN
   bucket = "my-bucket-name"
 
-  # expected_bucket_owner (Optional)
+  # expected_bucket_owner (Optional, Forces new resource, 非推奨)
   # 設定内容: バケットの予期される所有者のAWSアカウントIDを指定します。
   #           指定することでクロスアカウントアクセスのセキュリティ強化が可能です。
   # 設定可能な値: 12桁のAWSアカウントID
   # 省略時: 所有者の検証は行われません
+  # ※ この引数は非推奨です
   expected_bucket_owner = null
 
   # region (Optional)
@@ -57,6 +61,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
 
   # rule (Required, 1件以上設定必須)
   # 設定内容: バケットに適用するサーバーサイド暗号化ルールを定義するブロックです。
+  #           現在、1つのルールのみサポートされています。
   rule {
     # bucket_key_enabled (Optional)
     # 設定内容: S3バケットキーを有効にするかどうかを指定します。
@@ -67,12 +72,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
     bucket_key_enabled = true
 
     # blocked_encryption_types (Optional)
-    # 設定内容: バケットへのアップロード時に禁止する暗号化タイプのリストを指定します。
-    #           特定の暗号化タイプを強制的に排除したい場合に使用します。
+    # 設定内容: バケットへのアップロード時に禁止するサーバーサイド暗号化タイプのリストを指定します。
+    #           2026年3月以降、新規バケットではSSE-Cが自動的にブロックされます。
     # 設定可能な値:
-    #   "aws:kms"         - AWS KMSマネージドキーによるSSE-KMSを禁止
-    #   "aws:kms:dsse"    - デュアルレイヤーSSE-KMSを禁止
-    # 省略時: 暗号化タイプの制限なし
+    #   "SSE-C" - カスタマー提供キーによるサーバーサイド暗号化（SSE-C）のアップロードを禁止
+    #   "NONE"  - すべての暗号化タイプのブロックを解除
+    # 省略時: 暗号化タイプの制限なし（新規バケットではSSE-Cが自動ブロック）
     blocked_encryption_types = null
 
     # apply_server_side_encryption_by_default (Optional, 最大1件)
@@ -81,15 +86,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
       # sse_algorithm (Required)
       # 設定内容: デフォルトで使用するサーバーサイド暗号化アルゴリズムを指定します。
       # 設定可能な値:
+      #   "AES256"       - Amazon S3マネージドキーを使用するSSE-S3
       #   "aws:kms"      - AWS KMSマネージドキーを使用するSSE-KMS
       #   "aws:kms:dsse" - デュアルレイヤーSSE-KMS（二重暗号化）
-      #   "AES256"       - Amazon S3マネージドキーを使用するSSE-S3
       sse_algorithm = "aws:kms"
 
       # kms_master_key_id (Optional)
       # 設定内容: sse_algorithmに "aws:kms" または "aws:kms:dsse" を指定した場合に使用する
       #           KMSキーのIDまたはARNを指定します。
-      #           省略するとAWSマネージドキー（aws/s3）が使用されます。
       # 設定可能な値: KMSキーID、キーARN、またはキーエイリアスARN
       # 省略時: AWSマネージドキー（aws/s3）を使用
       kms_master_key_id = null

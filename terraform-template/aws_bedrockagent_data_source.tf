@@ -13,8 +13,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagent_data_source
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -484,16 +484,24 @@ resource "aws_bedrockagent_data_source" "example" {
     #   # 設定内容: パース戦略を指定します。
     #   # 設定可能な値:
     #   #   - "BEDROCK_FOUNDATION_MODEL": Bedrock Foundation Modelを使用してパース
+    #   #   - "BEDROCK_DATA_AUTOMATION": Bedrock Data Automationを使用してパース
     #   parsing_strategy = "BEDROCK_FOUNDATION_MODEL"
     #
     #   # bedrock_foundation_model_configuration (Optional)
     #   # 設定内容: データソースのドキュメントをパースするために使用する基盤モデルの設定を指定します。
+    #   # 注意: parsing_strategyが"BEDROCK_FOUNDATION_MODEL"の場合に指定
     #   bedrock_foundation_model_configuration {
-    #     # model_arn (Required)
+    #     # model_arn (Required, Forces new resource)
     #     # 設定内容: ドキュメントのパースに使用するモデルのARNを指定します。
     #     model_arn = "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0"
     #
-    #     # parsing_prompt (Optional)
+    #     # parsing_modality (Optional, Forces new resource)
+    #     # 設定内容: マルチモーダルデータのパースを有効にするかどうかを指定します。
+    #     # 設定可能な値:
+    #     #   - "MULTIMODAL": テキストと画像の両方を含むマルチモーダルパースを有効化
+    #     parsing_modality = "MULTIMODAL"
+    #
+    #     # parsing_prompt (Optional, Forces new resource)
     #     # 設定内容: ドキュメントの内容を解釈するための指示を指定します。
     #     parsing_prompt {
     #       # parsing_prompt_string (Required)
@@ -501,6 +509,17 @@ resource "aws_bedrockagent_data_source" "example" {
     #       parsing_prompt_string = "Please extract key information from this document."
     #     }
     #   }
+    #
+    #   # bedrock_data_automation_configuration (Optional)
+    #   # 設定内容: Amazon Bedrock Data Automationを使用してドキュメントをパースするための設定を指定します。
+    #   # 注意: parsing_strategyが"BEDROCK_DATA_AUTOMATION"の場合に指定
+    #   # bedrock_data_automation_configuration {
+    #   #   # parsing_modality (Optional, Forces new resource)
+    #   #   # 設定内容: マルチモーダルデータのパースを有効にするかどうかを指定します。
+    #   #   # 設定可能な値:
+    #   #   #   - "MULTIMODAL": テキストと画像の両方を含むマルチモーダルパースを有効化
+    #   #   parsing_modality = "MULTIMODAL"
+    #   # }
     # }
   }
 

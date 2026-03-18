@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_domain_name
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -176,6 +176,20 @@ resource "aws_api_gateway_domain_name" "example" {
   policy = null
 
   #-------------------------------------------------------------
+  # ルーティングモード設定
+  #-------------------------------------------------------------
+
+  # routing_mode (Optional)
+  # 設定内容: ドメイン名のトラフィックルーティングモードを指定します。
+  # 設定可能な値:
+  #   - "BASE_PATH_MAPPING_ONLY": ベースパスマッピングのみでルーティング
+  #   - "ROUTING_RULE_ONLY": ルーティングルールのみでルーティング
+  #   - "ROUTING_RULE_THEN_BASE_PATH_MAPPING": ルーティングルールを優先し、
+  #     一致しない場合はベースパスマッピングにフォールバック
+  # 省略時: プロバイダーのデフォルト値を使用
+  routing_mode = null
+
+  #-------------------------------------------------------------
   # エンドポイント設定
   #-------------------------------------------------------------
 
@@ -266,24 +280,14 @@ resource "aws_api_gateway_domain_name" "example" {
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - arn: ドメイン名のAmazon Resource Name (ARN)
-#
-# - certificate_upload_date: ドメイン証明書に関連付けられたアップロード日
-#
-# - cloudfront_domain_name: このドメイン名マッピングを実装するCloudFront
-#                           ディストリビューションのホスト名。
-#                           Edge-optimizedエンドポイントでRoute53エイリアス
-#                           レコード作成時に使用。
-#
-# - cloudfront_zone_id: CloudFrontディストリビューション用のホストゾーンID
-#                       (Z2FDTNDATAQYW2)。Route53エイリアスレコード作成時に使用。
-#
-# - domain_name_id: API Gatewayが割り当てたドメイン名リソースの識別子。
-#                   プライベートカスタムドメイン名でのみサポート。
-#
-# - id: API Gatewayが割り当てたドメイン名の内部識別子
-#
-# - regional_domain_name: カスタムドメインのリージョナルエンドポイント用ホスト名。
-#                         Regionalエンドポイントで Route53エイリアスレコード作成時に使用。
+# - arn: ドメイン名のARN
+# - certificate_upload_date: ドメイン証明書のアップロード日
+# - cloudfront_domain_name: Edge-optimized用CloudFrontディストリビューションのホスト名
+# - cloudfront_zone_id: CloudFront用ホストゾーンID (Z2FDTNDATAQYW2)
+# - domain_name_id: ドメイン名リソースの識別子（プライベートドメインのみ）
+# - id: ドメイン名の内部識別子
+# - regional_domain_name: リージョナルエンドポイント用ホスト名
+# - regional_zone_id: リージョナルエンドポイント用ホストゾーンID
+# - tags_all: default_tagsを含む全タグのマップ
 #
 #---------------------------------------------------------------

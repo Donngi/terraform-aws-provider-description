@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/organizations_organization
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -30,9 +30,10 @@ resource "aws_organizations_organization" "example" {
   # feature_set (Optional)
   # 設定内容: 組織で有効にする機能セットを指定します。
   # 設定可能な値:
-  #   - "ALL" (デフォルト): 全機能を有効化。サービスコントロールポリシー（SCP）や
+  #   - "ALL": 全機能を有効化。サービスコントロールポリシー（SCP）や
   #     AWSサービス統合など全ての機能が使用可能になります。
   #   - "CONSOLIDATED_BILLING": 統合請求機能のみ有効化。
+  # 省略時: "ALL"
   # 注意: "CONSOLIDATED_BILLING"から"ALL"へ移行する場合、招待で参加したメンバー
   #       アカウントのオーナーが変更を承認する必要があります。承認後にAWSコンソールで
   #       移行を完了させる必要があります。完了まではTerraformが差分を検出し続けます。
@@ -49,7 +50,7 @@ resource "aws_organizations_organization" "example" {
   # 省略時: AWSサービス統合は無効
   # 注意: feature_setが"ALL"の場合のみ設定可能です。
   #       サービスによっては、このエンドポイント経由での有効化をサポートしていません。
-  #       AWSのドキュメントの警告を参照してください。
+  #       各サービスが提供するコンソールやコマンドを使用した統合の有効化が推奨されています。
   # 参考: https://docs.aws.amazon.com/organizations/latest/APIReference/API_EnableAWSServiceAccess.html
   aws_service_access_principals = [
     "cloudtrail.amazonaws.com",
@@ -82,6 +83,22 @@ resource "aws_organizations_organization" "example" {
     "SERVICE_CONTROL_POLICY",
     "TAG_POLICY",
   ]
+
+  #-------------------------------------------------------------
+  # API制限回避設定
+  #-------------------------------------------------------------
+
+  # return_organization_only (Optional)
+  # 設定内容: DescribeOrganization APIの結果のみを属性として返すかどうかを指定します。
+  # 設定可能な値:
+  #   - true: arn, feature_set, master_account_arn, master_account_email,
+  #           master_account_id のみを返します。accounts, non_master_accounts,
+  #           roots などの属性は空になります。
+  #   - false: 全ての属性を返します。
+  # 省略時: false
+  # 用途: 大規模な組織でAPIレート制限に達する場合に、API呼び出しを削減するために使用します。
+  # 参考: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_reference_limits.html#throttling-limits
+  return_organization_only = false
 }
 
 #---------------------------------------------------------------
@@ -95,10 +112,10 @@ resource "aws_organizations_organization" "example" {
 # - master_account_email: マスターアカウントのメールアドレス
 # - master_account_id: マスターアカウントの識別子
 # - master_account_name: マスターアカウントの名前
-# - accounts: マスターアカウントを含む全アカウントのリスト。
-#             各要素: arn, email, id, joined_method, joined_timestamp, name, state
-# - non_master_accounts: マスターアカウントを除く全アカウントのリスト。
-#                        各要素: arn, email, id, joined_method, joined_timestamp, name, state
-# - roots: 組織のルートのリスト。
-#          各要素: arn, id, name, policy_types（status, type を持つオブジェクトのリスト）
+# - accounts: マスターアカウントを含む全アカウントのリスト
+#     各要素: arn, email, id, joined_method, joined_timestamp, name, state
+# - non_master_accounts: マスターアカウントを除く全アカウントのリスト
+#     各要素: arn, email, id, joined_method, joined_timestamp, name, state
+# - roots: 組織のルートのリスト
+#     各要素: arn, id, name, policy_types（status, type）
 #---------------------------------------------------------------

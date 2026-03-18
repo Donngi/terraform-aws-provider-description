@@ -18,8 +18,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_threatintelset
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -108,7 +108,8 @@ resource "aws_guardduty_threatintelset" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: GuardDuty ThreatIntelSet の Amazon Resource Name (ARN)
-#
+# - id: GuardDuty ThreatIntelSet の ID
+# - threat_intel_set_id: GuardDuty ThreatIntelSet の ID
 # - tags_all: プロバイダーの default_tags 設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ。
+#             リソースに割り当てられたすべてのタグのマップ
 #---------------------------------------------------------------

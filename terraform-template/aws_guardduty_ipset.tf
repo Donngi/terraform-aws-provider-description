@@ -17,8 +17,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_ipset
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -111,6 +111,8 @@ resource "aws_guardduty_ipset" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: GuardDuty IPSet の Amazon Resource Name (ARN)
+#
+# - ip_set_id: GuardDuty IPSet の ID
 #
 # - tags_all: プロバイダーの default_tags 設定ブロックから継承されたタグを含む、
 #             リソースに割り当てられたすべてのタグのマップ。

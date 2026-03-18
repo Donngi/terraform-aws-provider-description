@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/athena_workgroup
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -263,6 +263,36 @@ resource "aws_athena_workgroup" "example" {
     }
 
     #-----------------------------------------------------------
+    # S3アクセスグラント設定
+    #-----------------------------------------------------------
+
+    # query_results_s3_access_grants_configuration (Optional)
+    # 設定内容: クエリ結果に対するAmazon S3アクセスグラントの設定を指定します。
+    # 関連機能: S3 Access Grants
+    #   S3アクセスグラントを使用して、クエリ結果へのきめ細かなアクセス制御を実現します。
+    query_results_s3_access_grants_configuration {
+      # enable_s3_access_grants (Required)
+      # 設定内容: クエリ結果に対してS3アクセスグラントを有効にするかを指定します。
+      # 設定可能な値:
+      #   - true: S3アクセスグラントを有効化
+      #   - false: S3アクセスグラントを無効化
+      enable_s3_access_grants = false
+
+      # authentication_type (Required)
+      # 設定内容: S3アクセスグラントに使用する認証タイプを指定します。
+      # 設定可能な値:
+      #   - "DIRECTORY_IDENTITY": ディレクトリベースのID認証
+      authentication_type = "DIRECTORY_IDENTITY"
+
+      # create_user_level_prefix (Optional)
+      # 設定内容: クエリ結果出力場所にユーザーIDをS3パスプレフィックスとして追加するかを指定します。
+      # 設定可能な値:
+      #   - true: ユーザーIDプレフィックスを追加
+      #   - false (デフォルト): プレフィックスを追加しない
+      create_user_level_prefix = false
+    }
+
+    #-----------------------------------------------------------
     # マネージドクエリ結果設定
     #-----------------------------------------------------------
 
@@ -380,7 +410,7 @@ resource "aws_athena_workgroup" "example" {
 # - id: ワークグループ名
 #
 # - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ。
+#             リソースに割り当てられたすべてのタグのマップ
 #
 # - configuration.engine_version.effective_engine_version:
 #   実際にクエリで使用されるエンジンバージョン。

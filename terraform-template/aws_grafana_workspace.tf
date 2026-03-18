@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/grafana_workspace
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -161,6 +161,17 @@ resource "aws_grafana_workspace" "example" {
   # 設定可能な値: 有効なCloudFormationスタックセット名
   # 省略時: スタックセットを使用しない
   stack_set_name = null
+
+  #-------------------------------------------------------------
+  # 暗号化設定
+  #-------------------------------------------------------------
+
+  # kms_key_id (Optional)
+  # 設定内容: ワークスペースデータを暗号化するためのAWS KMSキーのARNを指定します。
+  #           カスタマーマネージドキー（CMK）によるデータ暗号化が必要な場合に設定します。
+  # 設定可能な値: 有効なKMSキーARN（例: "arn:aws:kms:ap-northeast-1:123456789012:key/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"）
+  # 省略時: AWS管理キーでデータが暗号化されます。
+  kms_key_id = null
 
   #-------------------------------------------------------------
   # ワークスペース設定

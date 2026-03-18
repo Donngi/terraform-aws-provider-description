@@ -6,8 +6,8 @@
 # ドメインはOpenSearch（またはElasticsearch）クラスターに相当する
 #
 # Terraform Registry: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/opensearch_domain
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -305,6 +305,29 @@ resource "aws_opensearch_domain" "example" {
       # 省略時: AWSがデフォルト設定を使用
       master_user_password = "YourSecurePassword1!"
     }
+
+    # JWT認証設定（OpenSearch 2.11以降で使用可能）
+    jwt_options {
+      # 設定内容: JWT認証を有効化するか
+      # 設定可能な値: true / false
+      # 省略時: AWSがデフォルト設定を使用
+      enabled = false
+
+      # 設定内容: JWT署名検証用のPEMエンコード公開鍵
+      # 設定可能な値: PEM形式の公開鍵文字列
+      # 省略時: AWSがデフォルト設定を使用
+      # public_key = null
+
+      # 設定内容: JWTアサーション内のロール情報要素
+      # 設定可能な値: JWTクレームキー文字列
+      # 省略時: "roles"
+      # roles_key = "roles"
+
+      # 設定内容: JWTアサーション内のユーザー名要素
+      # 設定可能な値: JWTクレームキー文字列
+      # 省略時: "sub"
+      # subject_key = "sub"
+    }
   }
 
   #---------------------------------------
@@ -442,6 +465,13 @@ resource "aws_opensearch_domain" "example" {
       # 省略時: AWSがデフォルト設定を使用
       enabled = false
     }
+
+    serverless_vector_acceleration {
+      # 設定内容: GPU高速化ベクター検索を有効化するか
+      # 設定可能な値: true / false
+      # 省略時: AWSがデフォルト設定を使用
+      enabled = false
+    }
   }
 
   #---------------------------------------
@@ -459,9 +489,15 @@ resource "aws_opensearch_domain" "example" {
     # 省略時: AWSがデフォルト設定を使用
     identity_center_instance_arn = null
 
-    # computed のみ（参照専用）
-    # roles_key   - OpenSearchのロールマッピングに使用されるJWTクレームキー
-    # subject_key - OpenSearchのユーザー識別に使用されるJWTクレームキー
+    # 設定内容: OpenSearchのロールマッピングに使用されるJWTクレームキー
+    # 設定可能な値: JWTクレームキー文字列
+    # 省略時: AWSがデフォルト設定を使用
+    # roles_key = null
+
+    # 設定内容: OpenSearchのユーザー識別に使用されるJWTクレームキー
+    # 設定可能な値: JWTクレームキー文字列
+    # 省略時: AWSがデフォルト設定を使用
+    # subject_key = null
   }
 
   #---------------------------------------
@@ -512,7 +548,6 @@ resource "aws_opensearch_domain" "example" {
 # Attributes Reference（参照専用）
 #---------------------------------------
 
-# aws_opensearch_domain.example.id                                  - ドメインのARN
 # aws_opensearch_domain.example.arn                                 - ドメインのARN
 # aws_opensearch_domain.example.domain_id                           - ドメインの一意識別子
 # aws_opensearch_domain.example.endpoint                            - HTTPSスキームなしのドメインエンドポイント

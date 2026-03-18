@@ -7,6 +7,8 @@
 # セキュリティ監査、アクセス解析、コスト把握に活用できます。
 #
 # 注意: このリソースはS3ディレクトリバケットには使用できません。
+#       Amazon S3はサーバーアクセスログ、AWS CloudTrail、または両方の組み合わせを
+#       サポートしています。要件に応じて最適な方法を選択してください。
 #
 # AWS公式ドキュメント:
 #   - サーバーアクセスログの概要: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
@@ -14,10 +16,10 @@
 #   - S3のロギングオプション: https://docs.aws.amazon.com/AmazonS3/latest/userguide/logging-with-S3.html
 #
 # Terraform Registry:
-#   - https://registry.terraform.io/providers/hashicorp/aws/6.28.0/docs/resources/s3_bucket_logging
+#   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_logging
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.36.0
+# Generated: 2026-03-18
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -45,19 +47,7 @@ resource "aws_s3_bucket_logging" "example" {
   # target_prefix (Required)
   # 設定内容: すべてのログオブジェクトキーに付与するプレフィックスを指定します。
   # 設定可能な値: 任意の文字列（例: "log/", "access-logs/"）
-  # 省略時: 空文字列（プレフィックスなし）は不可。必ず指定が必要です。
   target_prefix = "log/"
-
-  #-------------------------------------------------------------
-  # アカウント設定
-  #-------------------------------------------------------------
-
-  # expected_bucket_owner (Optional, Forces new resource, Deprecated)
-  # 設定内容: バケットの所有者として期待されるAWSアカウントIDを指定します。
-  # 設定可能な値: 有効な12桁のAWSアカウントID
-  # 省略時: 検証は行われません。
-  # 注意: この引数は非推奨（Deprecated）です。
-  expected_bucket_owner = null
 
   #-------------------------------------------------------------
   # リージョン設定
@@ -71,6 +61,17 @@ resource "aws_s3_bucket_logging" "example" {
   region = null
 
   #-------------------------------------------------------------
+  # アカウント設定
+  #-------------------------------------------------------------
+
+  # expected_bucket_owner (Optional, Forces new resource, Deprecated)
+  # 設定内容: バケットの所有者として期待されるAWSアカウントIDを指定します。
+  # 設定可能な値: 有効な12桁のAWSアカウントID
+  # 省略時: 検証は行われません。
+  # 注意: この引数は非推奨（Deprecated）です。
+  expected_bucket_owner = null
+
+  #-------------------------------------------------------------
   # ログアクセス許可設定
   #-------------------------------------------------------------
 
@@ -79,10 +80,6 @@ resource "aws_s3_bucket_logging" "example" {
   # 注意: ターゲットバケットがバケットオーナー強制型オブジェクト所有権設定を使用している場合、
   #       このブロックは使用できません。代わりにバケットポリシーで権限を付与してください。
   target_grant {
-    #-------------------------------------------------------------
-    # 付与権限設定
-    #-------------------------------------------------------------
-
     # permission (Required)
     # 設定内容: バケットのロギングに割り当てる権限を指定します。
     # 設定可能な値:
@@ -94,10 +91,6 @@ resource "aws_s3_bucket_logging" "example" {
     # grantee (Required)
     # 設定内容: 権限を付与する対象者の設定ブロックです。
     grantee {
-      #-------------------------------------------------------------
-      # 付与対象者設定
-      #-------------------------------------------------------------
-
       # type (Required)
       # 設定内容: 権限付与対象者の種別を指定します。
       # 設定可能な値:
@@ -116,8 +109,7 @@ resource "aws_s3_bucket_logging" "example" {
       # 設定内容: 付与対象者のメールアドレスを指定します。
       # 設定可能な値: 有効なメールアドレス
       # 省略時: typeが"AmazonCustomerByEmail"の場合に使用します。
-      # 注意: メールアドレスによるACLはAWSにて2025年10月1日をもってサポートが廃止されました。
-      #       対応しているAWSリージョンに制限があります。
+      # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
       email_address = null
 
       # uri (Optional)
@@ -138,18 +130,11 @@ resource "aws_s3_bucket_logging" "example" {
   # target_object_key_format (Optional)
   # 設定内容: ログオブジェクトのS3キーフォーマットを設定するブロックです。
   # 省略時: simple_prefixフォーマット（デフォルト）が使用されます。
-  # 関連機能: S3サーバーアクセスログのキーフォーマット
-  #   ログオブジェクトのキー形式をパーティション分割形式またはシンプル形式から選択できます。
-  #   パーティション分割形式はログの検索・分析に適しています。
-  #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
+  # 参考: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html
   target_object_key_format {
-    #-------------------------------------------------------------
-    # パーティション分割プレフィックス設定
-    #-------------------------------------------------------------
-
     # partitioned_prefix (Optional)
     # 設定内容: ログオブジェクトのS3キーをパーティション形式にするための設定ブロックです。
-    # 設定内容: キー形式は [target_prefix][SourceAccountId]/[SourceRegion]/[SourceBucket]/[YYYY]/[MM]/[DD]/[YYYY]-[MM]-[DD]-[hh]-[mm]-[ss]-[UniqueString]
+    # 設定可能な値: キー形式は [target_prefix][SourceAccountId]/[SourceRegion]/[SourceBucket]/[YYYY]/[MM]/[DD]/[YYYY]-[MM]-[DD]-[hh]-[mm]-[ss]-[UniqueString]
     # 注意: simple_prefixと同時に指定することはできません。
     partitioned_prefix {
       # partition_date_source (Required)
@@ -160,13 +145,9 @@ resource "aws_s3_bucket_logging" "example" {
       partition_date_source = "EventTime"
     }
 
-    #-------------------------------------------------------------
-    # シンプルプレフィックス設定
-    #-------------------------------------------------------------
-
     # simple_prefix (Optional)
     # 設定内容: ログオブジェクトのS3キーをシンプル形式にするための設定ブロックです。
-    # 設定内容: キー形式は [target_prefix][YYYY]-[MM]-[DD]-[hh]-[mm]-[ss]-[UniqueString]
+    # 設定可能な値: キー形式は [target_prefix][YYYY]-[MM]-[DD]-[hh]-[mm]-[ss]-[UniqueString]
     # 省略時: target_object_key_formatブロックを省略した場合のデフォルト動作と同等です。
     # 注意: partitioned_prefixと同時に指定することはできません。使用する場合は simple_prefix {} と空ブロックで記述します。
     # simple_prefix {}
@@ -180,4 +161,6 @@ resource "aws_s3_bucket_logging" "example" {
 #
 # - id: バケット名。expected_bucket_ownerが指定されている場合は
 #        bucket,expected_bucket_owner をカンマ区切りで結合した値。
+# - target_grant[].grantee[].display_name: 付与対象者の表示名。
+#   (Deprecated)
 #---------------------------------------------------------------
