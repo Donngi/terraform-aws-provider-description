@@ -42,18 +42,592 @@ resource "aws_ecs_task_definition" "example" {
   # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definitions
   container_definitions = jsonencode([
     {
-      name      = "web"
-      image     = "nginx:latest"
-      cpu       = 256
-      memory    = 512
+      #-----------------------------------------------------------
+      # 基本パラメータ
+      #-----------------------------------------------------------
+
+      # name (Required)
+      # 設定内容: コンテナの名前を指定します。
+      # 設定可能な値: 1-255文字の英数字、ハイフン、アンダースコア
+      # 詳細: タスク定義内で一意である必要があります。
+      #       他のコンテナのlinksやdependsOnで参照する際にこの名前を使用します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_name
+      name = "web"
+
+      # image (Required)
+      # 設定内容: コンテナの起動に使用するDockerイメージを指定します。
+      # 設定可能な値:
+      #   - Docker Hubイメージ: "nginx:latest", "ubuntu:22.04"
+      #   - ECRイメージ: "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/my-app:latest"
+      #   - ECR Publicイメージ: "public.ecr.aws/nginx/nginx:latest"
+      # 詳細: タグを省略した場合は "latest" が使用されます。
+      #       ダイジェスト指定も可能です（例: "nginx@sha256:abc123..."）。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_image
+      image = "nginx:latest"
+
+      # cpu (Optional)
+      # 設定内容: コンテナに予約するCPUユニット数を指定します。
+      # 設定可能な値: 0以上の整数（1024ユニット = 1 vCPU）
+      # 詳細: タスクレベルのcpuが設定されている場合、全コンテナのcpu合計はタスクレベルを超えられません。
+      #       Fargateではタスクレベルのcpuが優先されるため、コンテナレベルのcpuはオプションです。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_environment
+      cpu = 256
+
+      # memory (Optional)
+      # 設定内容: コンテナに適用するメモリのハードリミット（MiB単位）を指定します。
+      # 設定可能な値: 4以上の整数
+      # 詳細: コンテナがこの値を超えるメモリを使用しようとすると強制終了されます。
+      #       memoryとmemoryReservationの少なくとも一方を指定する必要があります。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_memory
+      memory = 512
+
+      # memoryReservation (Optional)
+      # 設定内容: コンテナに予約するメモリのソフトリミット（MiB単位）を指定します。
+      # 設定可能な値: 4以上の整数（memoryより小さい値）
+      # 詳細: コンテナに保証されるメモリ量です。実際の使用量はこの値を超えることができますが、
+      #       memoryで指定したハードリミットまでです。
+      #       Fargateではタスクレベルのmemoryが使用されます。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_memory
+      memoryReservation = 256
+
+      # essential (Optional)
+      # 設定内容: このコンテナが必須コンテナかどうかを指定します。
+      # 設定可能な値:
+      #   - true: このコンテナが停止するとタスク全体が停止（デフォルト）
+      #   - false: このコンテナが停止してもタスクは継続
+      # 詳細: タスク定義内で少なくとも1つのコンテナがessential=trueである必要があります。
+      #       サイドカーコンテナにはfalseを設定します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_essential
       essential = true
+
+      # versionConsistency (Optional)
+      # 設定内容: イメージタグのダイジェスト解決の一貫性を制御します。
+      # 設定可能な値:
+      #   - "enabled": タスク起動時にイメージタグをダイジェストに解決し、
+      #                同一タスク定義リビジョンのすべてのタスクで同じイメージを使用（デフォルト）
+      #   - "disabled": タスク起動のたびにイメージタグを再解決
+      # 詳細: enabledの場合、初回のタスク起動時に解決されたダイジェストが以降のタスクでも使用されます。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_versionconsistency
+      versionConsistency = "enabled"
+
+      #-----------------------------------------------------------
+      # ポートマッピング
+      #-----------------------------------------------------------
+
+      # portMappings (Optional)
+      # 設定内容: コンテナのポートマッピングを指定します。
+      # 設定可能な値: ポートマッピングオブジェクトの配列
+      # 詳細: コンテナポートとホストポートのマッピングを定義します。
+      #       awsvpcネットワークモードではhostPortはcontainerPortと同じ値にする必要があります。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_portmappings
       portMappings = [
         {
+          # containerPort (Required)
+          # 設定内容: コンテナ側のポート番号を指定します。
+          # 設定可能な値: 0-65535の整数
           containerPort = 80
-          hostPort      = 80
-          protocol      = "tcp"
+
+          # hostPort (Optional)
+          # 設定内容: ホスト側のポート番号を指定します。
+          # 設定可能な値: 0-65535の整数
+          # 詳細: awsvpcモードではcontainerPortと同じ値を指定します。
+          #       bridgeモードで省略または0を指定すると、動的ポートマッピングが使用されます。
+          hostPort = 80
+
+          # protocol (Optional)
+          # 設定内容: ポートマッピングで使用するプロトコルを指定します。
+          # 設定可能な値: "tcp"（デフォルト）, "udp"
+          protocol = "tcp"
+
+          # name (Optional)
+          # 設定内容: ポートマッピングの名前を指定します。
+          # 設定可能な値: 1-255文字の英数字、ハイフン、アンダースコア
+          # 詳細: Service Connectで使用する場合に必要です。
+          name = "http"
+
+          # appProtocol (Optional)
+          # 設定内容: ポートマッピングのアプリケーションプロトコルを指定します。
+          # 設定可能な値: "http", "http2", "grpc"
+          # 詳細: Service Connectで使用されます。nameが指定されている場合に設定可能です。
+          appProtocol = "http"
+
+          # containerPortRange (Optional)
+          # 設定内容: コンテナのポート範囲を指定します。
+          # 設定可能な値: "開始ポート-終了ポート"形式の文字列（例: "8000-8100"）
+          # 詳細: bridgeネットワークモードでのみ使用可能です。
+          #       指定した場合、containerPortとhostPortは使用できません。
+          # containerPortRange = "8000-8100"
         }
       ]
+
+      #-----------------------------------------------------------
+      # コマンド・実行設定
+      #-----------------------------------------------------------
+
+      # command (Optional)
+      # 設定内容: コンテナに渡すコマンドを指定します。
+      # 設定可能な値: 文字列の配列
+      # 詳細: DockerfileのCMD命令を上書きします。
+      #       exec形式（配列）で指定します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_command
+      command = ["nginx", "-g", "daemon off;"]
+
+      # entryPoint (Optional)
+      # 設定内容: コンテナのエントリポイントを指定します。
+      # 設定可能な値: 文字列の配列
+      # 詳細: DockerfileのENTRYPOINT命令を上書きします。
+      #       exec形式（配列）で指定します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_entrypoint
+      entryPoint = ["/docker-entrypoint.sh"]
+
+      # workingDirectory (Optional)
+      # 設定内容: コンテナ内の作業ディレクトリを指定します。
+      # 設定可能な値: コンテナ内の絶対パス
+      # 詳細: DockerfileのWORKDIR命令を上書きします。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_workingdirectory
+      workingDirectory = "/app"
+
+      #-----------------------------------------------------------
+      # 環境変数・シークレット
+      #-----------------------------------------------------------
+
+      # environment (Optional)
+      # 設定内容: コンテナに渡す環境変数を指定します。
+      # 設定可能な値: name（変数名）とvalue（値）のオブジェクトの配列
+      # 詳細: DockerfileのENV命令で設定された変数を上書きできます。
+      #       機密情報にはsecretsの使用を推奨します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_environment
+      environment = [
+        {
+          name  = "APP_ENV"
+          value = "production"
+        }
+      ]
+
+      # environmentFiles (Optional)
+      # 設定内容: S3に保存された環境変数ファイルのリストを指定します。
+      # 設定可能な値: value（S3 ARN）とtype（ファイルタイプ）のオブジェクトの配列
+      # 詳細: typeは "s3" のみサポートされます。
+      #       ファイルは .env 形式（KEY=VALUE）である必要があります。
+      #       最大10ファイルまで指定可能です。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/taskdef-envfiles.html
+      environmentFiles = [
+        {
+          value = "arn:aws:s3:::my-bucket/my-env-file.env"
+          type  = "s3"
+        }
+      ]
+
+      # secrets (Optional)
+      # 設定内容: コンテナに渡すシークレットを指定します。
+      # 設定可能な値: name（環境変数名）とvalueFrom（シークレットのARN）のオブジェクトの配列
+      # 詳細: AWS Secrets ManagerシークレットまたはSSM Parameter StoreパラメータのARNを指定します。
+      #       SSMパラメータの場合はフルARNを指定します。
+      #       Secrets Managerの特定のキーを指定する場合は "arn::secret-name:json-key:version-stage:version-id" 形式を使用します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html
+      secrets = [
+        {
+          name      = "DATABASE_PASSWORD"
+          valueFrom = "arn:aws:secretsmanager:ap-northeast-1:123456789012:secret:my-db-password"
+        }
+      ]
+
+      #-----------------------------------------------------------
+      # ネットワーク設定
+      #-----------------------------------------------------------
+
+      # disableNetworking (Optional)
+      # 設定内容: コンテナ内のネットワーキングを無効にするかを指定します。
+      # 設定可能な値:
+      #   - true: ネットワーキングを無効化
+      #   - false: ネットワーキングを有効化（デフォルト）
+      # 詳細: trueの場合、コンテナのポートマッピングは使用できません。
+      #       awsvpcネットワークモードでは使用できません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_network
+      disableNetworking = false
+
+      # links (Optional)
+      # 設定内容: 他のコンテナへのリンクを指定します。
+      # 設定可能な値: "コンテナ名" または "コンテナ名:エイリアス" 形式の文字列の配列
+      # 詳細: bridgeネットワークモードでのみ使用可能です。
+      #       awsvpcモードでは使用できません。
+      #       リンクされたコンテナ間で安全な通信が可能になります。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_links
+      # links = ["db:database"]
+
+      # hostname (Optional)
+      # 設定内容: コンテナで使用するホスト名を指定します。
+      # 設定可能な値: 任意の文字列
+      # 詳細: bridgeネットワークモードでのみ使用可能です。
+      #       awsvpcモードではコンテナ名がホスト名として使用されます。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_hostname
+      # hostname = "web-server"
+
+      # dnsServers (Optional)
+      # 設定内容: コンテナに設定するDNSサーバーのリストを指定します。
+      # 設定可能な値: IPアドレスの文字列の配列（最大4つ）
+      # 詳細: awsvpcネットワークモードでは使用できません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_dns
+      # dnsServers = ["8.8.8.8", "8.8.4.4"]
+
+      # dnsSearchDomains (Optional)
+      # 設定内容: コンテナに設定するDNS検索ドメインのリストを指定します。
+      # 設定可能な値: ドメイン名の文字列の配列（最大6つ）
+      # 詳細: awsvpcネットワークモードでは使用できません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_dns
+      # dnsSearchDomains = ["example.com"]
+
+      # extraHosts (Optional)
+      # 設定内容: コンテナの/etc/hostsファイルに追加するホストエントリを指定します。
+      # 設定可能な値: hostname（ホスト名）とipAddress（IPアドレス）のオブジェクトの配列
+      # 詳細: awsvpcネットワークモードでは使用できません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_extrahosts
+      # extraHosts = [
+      #   {
+      #     hostname  = "my-service"
+      #     ipAddress = "10.0.0.1"
+      #   }
+      # ]
+
+      #-----------------------------------------------------------
+      # ストレージ・ログ
+      #-----------------------------------------------------------
+
+      # readonlyRootFilesystem (Optional)
+      # 設定内容: コンテナのルートファイルシステムを読み取り専用にするかを指定します。
+      # 設定可能な値:
+      #   - true: ルートファイルシステムを読み取り専用に設定
+      #   - false: ルートファイルシステムへの書き込みを許可（デフォルト）
+      # 詳細: セキュリティのベストプラクティスとしてtrueを推奨します。
+      #       書き込みが必要な場合はボリュームマウントを使用してください。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_storage
+      readonlyRootFilesystem = false
+
+      # mountPoints (Optional)
+      # 設定内容: コンテナにマウントするボリュームを指定します。
+      # 設定可能な値: sourceVolume、containerPath、readOnlyのオブジェクトの配列
+      # 詳細: タスク定義のvolumeセクションで定義されたボリュームを参照します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_mountpoints
+      mountPoints = [
+        {
+          # sourceVolume: タスク定義のvolumeで定義したボリューム名
+          sourceVolume = "service-storage"
+          # containerPath: コンテナ内のマウントパス
+          containerPath = "/data"
+          # readOnly: 読み取り専用でマウントするか（デフォルト: false）
+          readOnly = false
+        }
+      ]
+
+      # volumesFrom (Optional)
+      # 設定内容: 他のコンテナからマウントするボリュームを指定します。
+      # 設定可能な値: sourceContainer（コンテナ名）とreadOnlyのオブジェクトの配列
+      # 詳細: 指定したコンテナが定義しているボリュームマウントを共有します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_volumesfrom
+      # volumesFrom = [
+      #   {
+      #     sourceContainer = "data-container"
+      #     readOnly        = true
+      #   }
+      # ]
+
+      # logConfiguration (Optional)
+      # 設定内容: コンテナのログ設定を指定します。
+      # 設定可能な値: logDriver、options、secretOptionsのオブジェクト
+      # 詳細: Fargateでは "awslogs", "splunk", "awsfirelens" がサポートされます。
+      #       EC2では "json-file", "syslog", "journald", "gelf", "fluentd", "awslogs", "splunk", "awsfirelens" がサポートされます。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html
+      logConfiguration = {
+        # logDriver (Required): ログドライバー名
+        logDriver = "awslogs"
+        # options (Optional): ログドライバーに渡す設定オプション
+        options = {
+          "awslogs-group"         = "/ecs/my-app"
+          "awslogs-region"        = "ap-northeast-1"
+          "awslogs-stream-prefix" = "web"
+        }
+        # secretOptions (Optional): ログドライバーに渡すシークレット（name/valueFromの配列）
+        # secretOptions = [
+        #   {
+        #     name      = "api-key"
+        #     valueFrom = "arn:aws:secretsmanager:ap-northeast-1:123456789012:secret:log-api-key"
+        #   }
+        # ]
+      }
+
+      # firelensConfiguration (Optional)
+      # 設定内容: FireLens設定を指定します。
+      # 設定可能な値: type（ルーターの種類）とoptions（設定オプション）のオブジェクト
+      # 詳細: FluentdまたはFluent Bitをログルーターとして使用します。
+      #       コンテナイメージにFluentd/Fluent Bitがインストールされている必要があります。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_firelens.html
+      # firelensConfiguration = {
+      #   # type (Required): "fluentd" または "fluentbit"
+      #   type = "fluentbit"
+      #   # options (Optional): 設定オプション
+      #   options = {
+      #     "config-file-type"  = "file"
+      #     "config-file-value" = "/fluent-bit/configs/parse-json.conf"
+      #   }
+      # }
+
+      #-----------------------------------------------------------
+      # ヘルスチェック・ライフサイクル
+      #-----------------------------------------------------------
+
+      # healthCheck (Optional)
+      # 設定内容: コンテナのヘルスチェック設定を指定します。
+      # 設定可能な値: command、interval、timeout、retries、startPeriodのオブジェクト
+      # 詳細: DockerfileのHEALTHCHECK命令を上書きします。
+      #       ECSのヘルスチェックはDockerヘルスチェックとは独立して動作します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_healthcheck
+      healthCheck = {
+        # command (Required): ヘルスチェックコマンド。
+        #   先頭に "CMD" を付けるとコマンドを直接実行、"CMD-SHELL" を付けるとシェル経由で実行
+        command = ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+        # interval (Optional): ヘルスチェックの実行間隔（秒）。デフォルト: 30、最小: 5、最大: 300
+        interval = 30
+        # timeout (Optional): ヘルスチェックのタイムアウト（秒）。デフォルト: 5、最小: 2、最大: 120
+        timeout = 5
+        # retries (Optional): unhealthyと判定するまでのリトライ回数。デフォルト: 3、最小: 1、最大: 10
+        retries = 3
+        # startPeriod (Optional): 起動猶予期間（秒）。この期間中のヘルスチェック失敗はリトライ回数に含まれません。
+        #   デフォルト: 0、最小: 0、最大: 300
+        startPeriod = 60
+      }
+
+      # restartPolicy (Optional)
+      # 設定内容: コンテナの再起動ポリシーを指定します。
+      # 設定可能な値: enabled、ignoredExitCodes、restartAttemptPeriodのオブジェクト
+      # 詳細: essential=falseのコンテナが終了した場合の再起動動作を制御します。
+      #       Fargateプラットフォームバージョン1.4.0以降で使用可能です。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-restart-policy.html
+      # restartPolicy = {
+      #   # enabled (Required): 再起動ポリシーを有効にするか
+      #   enabled = true
+      #   # ignoredExitCodes (Optional): 再起動をトリガーしない終了コードのリスト
+      #   ignoredExitCodes = [0]
+      #   # restartAttemptPeriod (Optional): 再起動試行の期間（秒）。デフォルト: 300、最小: 60、最大: 1800
+      #   restartAttemptPeriod = 300
+      # }
+
+      # dependsOn (Optional)
+      # 設定内容: コンテナの起動・停止の依存関係を指定します。
+      # 設定可能な値: containerName（依存先コンテナ名）とcondition（条件）のオブジェクトの配列
+      # 詳細: 指定した条件が満たされるまでこのコンテナの起動を待機します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_dependson
+      # dependsOn = [
+      #   {
+      #     # containerName: 依存先のコンテナ名
+      #     containerName = "init"
+      #     # condition: 依存条件
+      #     #   - "START": コンテナが起動したら
+      #     #   - "COMPLETE": コンテナが正常終了（終了コード0）したら
+      #     #   - "SUCCESS": コンテナが正常終了しヘルスチェックに合格したら
+      #     #   - "HEALTHY": コンテナのヘルスチェックが合格したら
+      #     condition = "HEALTHY"
+      #   }
+      # ]
+
+      # startTimeout (Optional)
+      # 設定内容: dependsOnの依存関係解決を待つ最大時間（秒）を指定します。
+      # 設定可能な値: 0以上の整数（秒）
+      # 詳細: この時間内にdependsOnの条件が満たされない場合、コンテナは起動に失敗します。
+      #       Fargateではデフォルトで使用可能です。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_timeout
+      # startTimeout = 120
+
+      # stopTimeout (Optional)
+      # 設定内容: コンテナが自発的に終了しない場合に強制終了するまでの待機時間（秒）を指定します。
+      # 設定可能な値: 0以上の整数（秒）
+      # 詳細: SIGTERMシグナルを送信後、この時間が経過してもコンテナが終了しない場合にSIGKILLが送信されます。
+      #       Fargateのデフォルトは30秒、EC2のデフォルトは30秒です。
+      #       Fargateでは最大120秒まで設定可能です。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_timeout
+      # stopTimeout = 30
+
+      #-----------------------------------------------------------
+      # セキュリティ
+      #-----------------------------------------------------------
+
+      # privileged (Optional)
+      # 設定内容: コンテナに特権アクセスを付与するかを指定します。
+      # 設定可能な値:
+      #   - true: ホストのすべてのデバイスにアクセス可能
+      #   - false: 特権アクセスなし（デフォルト）
+      # 詳細: Fargateでは使用できません（常にfalse）。
+      #       セキュリティ上のリスクがあるため、必要な場合のみ使用してください。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_security
+      # privileged = false
+
+      # user (Optional)
+      # 設定内容: コンテナ内で使用するユーザーを指定します。
+      # 設定可能な値:
+      #   - "uid" 形式: ユーザーIDで指定（例: "1000"）
+      #   - "uid:gid" 形式: ユーザーIDとグループIDで指定（例: "1000:1000"）
+      #   - "username" 形式: ユーザー名で指定
+      # 詳細: DockerfileのUSER命令を上書きします。
+      #       Fargateではroot（UID 0）での実行も可能ですが、非rootユーザーを推奨します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_security
+      # user = "1000:1000"
+
+      # dockerSecurityOptions (Optional)
+      # 設定内容: Dockerセキュリティオプションを指定します。
+      # 設定可能な値: セキュリティオプション文字列の配列
+      # 詳細: SELinuxやAppArmorのカスタムラベルを指定できます。
+      #       Fargateでは使用できません。
+      #       例: ["label:user:USER", "label:role:ROLE"]
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_security
+      # dockerSecurityOptions = ["no-new-privileges"]
+
+      # credentialSpecs (Optional)
+      # 設定内容: Active Directory認証用のクレデンシャルスペックを指定します。
+      # 設定可能な値: クレデンシャルスペックのARNの文字列の配列
+      # 詳細: gMSA（Group Managed Service Account）を使用する場合に指定します。
+      #       "credentialspecdomainless:arn" または "credentialspec:arn" 形式で指定します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/windows-gmsa.html
+      # credentialSpecs = ["credentialspecdomainless:arn:aws:s3:::my-bucket/my-credspec.json"]
+
+      # repositoryCredentials (Optional)
+      # 設定内容: プライベートリポジトリの認証情報を指定します。
+      # 設定可能な値: credentialsParameter（Secrets ManagerシークレットのARN）を含むオブジェクト
+      # 詳細: プライベートDockerレジストリの認証情報をSecrets Managerに保存し、そのARNを指定します。
+      #       シークレットには username と password のJSON形式で認証情報を格納します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html
+      # repositoryCredentials = {
+      #   credentialsParameter = "arn:aws:secretsmanager:ap-northeast-1:123456789012:secret:my-registry-creds"
+      # }
+
+      #-----------------------------------------------------------
+      # リソース制限
+      #-----------------------------------------------------------
+
+      # ulimits (Optional)
+      # 設定内容: コンテナに適用するリソース制限を指定します。
+      # 設定可能な値: name（制限名）、softLimit（ソフトリミット）、hardLimit（ハードリミット）のオブジェクトの配列
+      # 詳細: Fargateでは "nofile" のみサポートされます。
+      #       nameの種類: core, cpu, data, fsize, locks, memlock, msgqueue, nice,
+      #                   nofile, nproc, rss, rtprio, rttime, sigpending, stack
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_ulimits
+      # ulimits = [
+      #   {
+      #     name      = "nofile"
+      #     softLimit = 65536
+      #     hardLimit = 65536
+      #   }
+      # ]
+
+      # resourceRequirements (Optional)
+      # 設定内容: コンテナに割り当てるGPU等のリソース要件を指定します。
+      # 設定可能な値: type（リソースタイプ）とvalue（リソース量）のオブジェクトの配列
+      # 詳細: typeには "GPU"（EC2のみ）または "InferenceAccelerator" を指定します。
+      #       GPUの場合、valueはGPUの数を文字列で指定します。
+      #       Fargateでは使用できません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-gpu.html
+      # resourceRequirements = [
+      #   {
+      #     type  = "GPU"
+      #     value = "1"
+      #   }
+      # ]
+
+      #-----------------------------------------------------------
+      # Linux固有設定
+      #-----------------------------------------------------------
+
+      # linuxParameters (Optional)
+      # 設定内容: コンテナに適用するLinux固有の設定を指定します。
+      # 設定可能な値: 以下のフィールドを持つオブジェクト
+      # 詳細: Linuxカーネルの機能（capabilities）、デバイスマッピング、
+      #       initプロセス、メモリ/スワップ設定、tmpfsなどを制御します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_linuxparameters
+      # linuxParameters = {
+      #   # capabilities (Optional): Linuxケーパビリティの設定
+      #   capabilities = {
+      #     # add (Optional): 追加するケーパビリティのリスト
+      #     #   例: "SYS_PTRACE", "NET_ADMIN", "SYS_ADMIN" など
+      #     add = ["SYS_PTRACE"]
+      #     # drop (Optional): 削除するケーパビリティのリスト
+      #     #   セキュリティ強化のため不要なケーパビリティの削除を推奨
+      #     drop = ["ALL"]
+      #   }
+      #   # devices (Optional): ホストデバイスのマッピング（EC2のみ、Fargateでは使用不可）
+      #   # devices = [
+      #   #   {
+      #   #     hostPath      = "/dev/xvdc"
+      #   #     containerPath = "/dev/xvdc"
+      #   #     permissions   = ["read", "write"]
+      #   #   }
+      #   # ]
+      #   # initProcessEnabled (Optional): コンテナ内でinitプロセスを実行するか
+      #   #   trueにするとゾンビプロセスの刈り取りとシグナル転送が有効になります
+      #   initProcessEnabled = true
+      #   # maxSwap (Optional): コンテナが使用できるスワップの最大量（MiB）。EC2のみ
+      #   # maxSwap = 0
+      #   # sharedMemorySize (Optional): /dev/shmボリュームのサイズ（MiB）。EC2のみ
+      #   # sharedMemorySize = 64
+      #   # swappiness (Optional): メモリのスワップ動作（0-100）。EC2のみ
+      #   # swappiness = 60
+      #   # tmpfs (Optional): tmpfsマウントの設定（EC2のみ）
+      #   # tmpfs = [
+      #   #   {
+      #   #     containerPath = "/tmp"
+      #   #     size          = 100
+      #   #     mountOptions  = ["rw", "noexec", "nosuid"]
+      #   #   }
+      #   # ]
+      # }
+
+      #-----------------------------------------------------------
+      # メタデータ
+      #-----------------------------------------------------------
+
+      # dockerLabels (Optional)
+      # 設定内容: コンテナに追加するDockerラベルを指定します。
+      # 設定可能な値: キーと値のペアのマップ
+      # 詳細: Dockerラベルはコンテナのメタデータとして使用されます。
+      #       ECS Container Insightsやサードパーティツールと連携する際に有用です。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_labels
+      # dockerLabels = {
+      #   "com.example.environment" = "production"
+      #   "com.example.team"        = "platform"
+      # }
+
+      #-----------------------------------------------------------
+      # その他
+      #-----------------------------------------------------------
+
+      # interactive (Optional)
+      # 設定内容: コンテナをインタラクティブモードで実行するかを指定します。
+      # 設定可能な値:
+      #   - true: stdinチャネルを開いたままにする（docker run -i に相当）
+      #   - false: インタラクティブモードを無効化（デフォルト）
+      # 詳細: pseudoTerminalと組み合わせてデバッグ用途で使用します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_interactive
+      # interactive = false
+
+      # pseudoTerminal (Optional)
+      # 設定内容: 疑似ターミナル（TTY）を割り当てるかを指定します。
+      # 設定可能な値:
+      #   - true: 疑似ターミナルを割り当て（docker run -t に相当）
+      #   - false: 疑似ターミナルなし（デフォルト）
+      # 詳細: interactiveと組み合わせてデバッグ用途で使用します。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_interactive
+      # pseudoTerminal = false
+
+      # systemControls (Optional)
+      # 設定内容: コンテナに設定するカーネルパラメータを指定します。
+      # 設定可能な値: namespace（パラメータ名）とvalue（パラメータ値）のオブジェクトの配列
+      # 詳細: awsvpcネットワークモードまたはFargateでは、
+      #       namespaceが "System Controls" のパラメータのみ設定可能です。
+      #       Fargateでは現在サポートされていません。
+      # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_systemcontrols
+      # systemControls = [
+      #   {
+      #     namespace = "net.core.somaxconn"
+      #     value     = "1024"
+      #   }
+      # ]
     }
   ])
 
