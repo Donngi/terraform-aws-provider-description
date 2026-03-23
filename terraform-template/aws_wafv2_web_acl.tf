@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/wafv2_web_acl
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-19
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -224,9 +224,10 @@ resource "aws_wafv2_web_acl" "example" {
         #     # 設定内容: Bot Controlルールグループの検査レベルを指定します。
         #     # 設定可能な値: "COMMON", "TARGETED"
         #     inspection_level = "COMMON"
-        #     # enable_machine_learning (Optional)
+        #     # enable_machine_learning (Optional, Computed)
         #     # 設定内容: TARGETEDレベルのみ有効。機械学習でボット関連トラフィックを分析するかを指定します。
-        #     # 省略時: true
+        #     # 設定可能な値: true / false
+        #     # 省略時: AWSがデフォルト値を自動設定（true）
         #     enable_machine_learning = true
         #   }
         # }

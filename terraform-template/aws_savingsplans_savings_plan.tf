@@ -19,8 +19,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/savingsplans_savings_plan
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -115,8 +115,7 @@ resource "aws_savingsplans_savings_plan" "example" {
 # - savings_plan_arn: Savings PlanのARN
 # - savings_plan_id: Savings PlanのID
 # - state: 現在の状態（active, queued, retired等）
-# - start: 開始日時（RFC3339形式）
-# - end: 終了日時（RFC3339形式）
+# - start / end: 開始・終了日時（RFC3339形式）
 # - savings_plan_type: プランの種類（Compute, EC2Instance等）
 # - payment_option: 支払いオプション（All/Partial/No Upfront）
 # - currency: 通貨（例: USD）
@@ -124,6 +123,9 @@ resource "aws_savingsplans_savings_plan" "example" {
 # - term_duration_in_seconds: 期間（秒）
 # - ec2_instance_family: EC2インスタンスファミリー
 # - region: AWSリージョン
-# - offering_id: オファリングID
+# - description: プランの説明
+# - product_types: 対象プロダクトタイプのリスト
+# - returnable_until: 返却可能期限
+# - offering_id: オファリングID（非推奨）
 # - tags_all: 継承タグを含む全タグマップ
 #---------------------------------------------------------------

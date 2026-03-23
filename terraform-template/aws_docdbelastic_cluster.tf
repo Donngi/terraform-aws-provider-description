@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/docdbelastic_cluster
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-22
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -71,6 +71,19 @@ resource "aws_docdbelastic_cluster" "example" {
   #   各シャードは2つのノードを異なるアベイラビリティゾーンにデプロイします。
   #   - https://docs.aws.amazon.com/documentdb/latest/developerguide/elastic-how-it-works.html
   shard_count = 1
+
+  #-------------------------------------------------------------
+  # シャードレプリカ設定 (Optional)
+  #-------------------------------------------------------------
+
+  # shard_instance_count (Optional)
+  # 設定内容: Elastic Clusterの全シャードに適用されるレプリカインスタンス数を指定します。
+  # 設定可能な値: 1以上の整数
+  # 省略時: デフォルト値2が設定されます
+  # 関連機能: Elastic Clustersの高可用性
+  #   各シャードのレプリカ数を増やすことで、読み取りスループットの向上と
+  #   高可用性を実現できます。レプリカは異なるアベイラビリティゾーンに配置されます。
+  shard_instance_count = 2
 
   #-------------------------------------------------------------
   # バックアップ設定 (Optional)

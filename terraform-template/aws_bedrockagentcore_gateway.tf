@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_gateway
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -121,6 +121,11 @@ resource "aws_bedrockagentcore_gateway" "example" {
       # 設定内容: JWTトークン検証で許可されるクライアントIDのセットを指定します。
       # 設定可能な値: 文字列のセット
       allowed_clients = ["client-123", "client-456"]
+
+      # allowed_scopes (Optional)
+      # 設定内容: トークンへのアクセスを許可するスコープのセットを指定します。
+      # 設定可能な値: 文字列のセット
+      allowed_scopes = ["openid", "email"]
     }
   }
 
@@ -143,7 +148,6 @@ resource "aws_bedrockagentcore_gateway" "example" {
       # 設定内容: MCPの検索タイプを指定します。
       # 設定可能な値:
       #   - "SEMANTIC": セマンティック検索。自然言語クエリでツールを検索可能
-      #   - "HYBRID": ハイブリッド検索
       # 関連機能: ツールのセマンティック検索
       #   自然言語クエリを使用してGateway内のツールを検索できます。
       #   Gateway作成時にのみ有効化可能で、作成者にはbedrock-agentcore:SynchronizeGatewayTargets

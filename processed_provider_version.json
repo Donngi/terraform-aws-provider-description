@@ -1,10 +1,10 @@
 {
   "format_version": "1.0",
   "last_processed": {
-    "version": "6.36.0",
-    "timestamp": "2026-03-18T01:11:14Z",
-    "total_resources": 87,
-    "processed_resources": 87,
-    "schema_checksum": "32da2582a22e9f453da9db852f7ce76d3d8abea5634c0ab3c96b24fa7816ce90"
+    "version": "6.37.0",
+    "timestamp": "2026-03-20T08:17:43Z",
+    "total_resources": 1621,
+    "processed_resources": 7,
+    "schema_checksum": "2d0c2e55cc458ac9927a0b148978e51ce95e03c623960a7113c18c383573808f"
   }
 }

@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/datasync_task
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-22
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -278,6 +278,13 @@ resource "aws_datasync_task" "example" {
     #   - "cron(0 12 * * ? *)": 毎日 12:00 UTC に実行
     # 参考: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
     schedule_expression = "rate(1 hour)"
+
+    # status (Optional)
+    # 設定内容: タスクスケジュールの有効・無効を指定します。
+    # 設定可能な値:
+    #   - "ENABLED" (デフォルト): スケジュールを有効化
+    #   - "DISABLED": スケジュールを無効化
+    status = "ENABLED"
   }
 
   #-------------------------------------------------------------

@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.37.0
+# Generated: 2026-03-20
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -45,6 +45,13 @@ resource "aws_s3_bucket" "example" {
   # 注意: bucket と排他的（どちらか一方のみ指定可能）
   # 参考: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html
   bucket_prefix = null
+
+  # bucket_namespace (Optional)
+  # 設定内容: バケットの名前空間を指定します。
+  #   AWS が提供するバケット名前空間機能を利用して、バケット名の一意性スコープを制御します。
+  # 設定可能な値: 文字列
+  # 省略時: AWSのデフォルト動作（グローバル名前空間）
+  bucket_namespace = null
 
   #-------------------------------------------------------------
   # リージョン設定
@@ -675,6 +682,7 @@ resource "aws_s3_bucket" "example" {
 #
 # - id: バケットの名前
 # - arn: バケットの ARN（例: arn:aws:s3:::bucketname）
+# - bucket_namespace: バケットの名前空間
 # - bucket_domain_name: バケットのドメイン名（例: bucketname.s3.amazonaws.com）
 # - bucket_regional_domain_name: バケットのリージョン固有ドメイン名
 # - bucket_region: バケットが存在する AWS リージョン
