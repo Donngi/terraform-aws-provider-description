@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_agent_runtime
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.38.0
+# Generated: 2026-03-26
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -176,6 +176,53 @@ resource "aws_bedrockagentcore_agent_runtime" "example" {
   #     # 設定内容: JWTトークン検証で許可されるクライアントIDのセットを指定します。
   #     # 設定可能な値: 文字列のセット
   #     allowed_clients = ["client-123", "client-456"]
+  #
+  #     # allowed_scopes (Optional)
+  #     # 設定内容: トークンへのアクセスが許可されるスコープのセットを指定します。
+  #     # 設定可能な値: 文字列のセット
+  #     allowed_scopes = ["openid", "email"]
+  #
+  #     # custom_claim (Optional, 繰り返し可)
+  #     # 設定内容: カスタムクレームの検証ルールを定義します。
+  #     # 関連機能: JWTトークンのカスタムクレーム検証
+  #     #   特定のクレーム値に基づくきめ細かなアクセス制御を実現できます。
+  #     # custom_claim {
+  #     #   # inbound_token_claim_name (Required)
+  #     #   # 設定内容: 検証対象のカスタムクレームフィールド名を指定します。
+  #     #   # 設定可能な値: 文字列
+  #     #   inbound_token_claim_name = "department"
+  #     #
+  #     #   # inbound_token_claim_value_type (Required)
+  #     #   # 設定内容: 検証するクレーム値のデータ型を指定します。
+  #     #   # 設定可能な値:
+  #     #   #   - "STRING": 単一の文字列値
+  #     #   #   - "STRING_ARRAY": 文字列配列
+  #     #   inbound_token_claim_value_type = "STRING"
+  #     #
+  #     #   authorizing_claim_match_value {
+  #     #     # claim_match_operator (Required)
+  #     #     # 設定内容: クレーム値とマッチ値の比較演算子を指定します。
+  #     #     # 設定可能な値:
+  #     #     #   - "EQUALS": 完全一致（inbound_token_claim_value_typeが"STRING"の場合のみ使用可能）
+  #     #     #   - "CONTAINS": 値を含む（inbound_token_claim_value_typeが"STRING_ARRAY"の場合のみ使用可能）
+  #     #     #   - "CONTAINS_ANY": いずれかの値を含む（inbound_token_claim_value_typeが"STRING_ARRAY"の場合のみ使用可能）
+  #     #     claim_match_operator = "EQUALS"
+  #     #
+  #     #     claim_match_value {
+  #     #       # match_value_string (Optional)
+  #     #       # 設定内容: マッチ対象の文字列値を指定します。
+  #     #       # 注意: claim_match_operatorが"EQUALS"または"CONTAINS"の場合に指定。
+  #     #       #       match_value_string_listと排他的に指定します。
+  #     #       match_value_string = "engineering"
+  #     #
+  #     #       # match_value_string_list (Optional)
+  #     #       # 設定内容: マッチ対象の文字列リストを指定します。
+  #     #       # 注意: claim_match_operatorが"CONTAINS_ANY"の場合に指定。
+  #     #       #       match_value_stringと排他的に指定します。
+  #     #       # match_value_string_list = ["engineering", "data-science"]
+  #     #     }
+  #     #   }
+  #     # }
   #   }
   # }
 

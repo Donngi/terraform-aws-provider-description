@@ -4,19 +4,19 @@
 #
 # Amazon Bedrock AgentCore Gatewayのターゲットを管理するリソースです。
 # Gateway Targetは、ゲートウェイが呼び出すエンドポイントと構成を定義し、
-# Lambda関数やAPIなどの外部サービスとModel Context Protocol (MCP) を通じて
-# エージェントが対話できるようにします。
+# Lambda関数、API Gateway、MCPサーバーなどの外部サービスと
+# Model Context Protocol (MCP) を通じてエージェントが対話できるようにします。
 #
 # AWS公式ドキュメント:
 #   - AgentCore Gateway概要: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway.html
-#   - Gateway構築ガイド: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building.html
 #   - サポートされるターゲット: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-supported-targets.html
+#   - ターゲット設定ガイド: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-add-target-api-target-config.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_gateway_target
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.38.0
+# Generated: 2026-03-26
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -25,7 +25,7 @@
 
 resource "aws_bedrockagentcore_gateway_target" "example" {
   #-------------------------------------------------------------
-  # 基本設定（必須）
+  # 基本設定
   #-------------------------------------------------------------
 
   # name (Required)
@@ -37,10 +37,6 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
   # 設定内容: このターゲットが属するGatewayの識別子を指定します。
   # 設定可能な値: Gateway ID または ARN
   gateway_identifier = aws_bedrockagentcore_gateway.example.gateway_id
-
-  #-------------------------------------------------------------
-  # 基本設定（オプション）
-  #-------------------------------------------------------------
 
   # description (Optional)
   # 設定内容: Gateway Targetの説明を指定します。
@@ -57,6 +53,7 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
   #-------------------------------------------------------------
   # 認証設定 (credential_provider_configuration)
   #-------------------------------------------------------------
+  # ターゲットへのリクエスト認証の設定です。
   # lambda、open_api_schema、smithy_modelを使用する場合は必須です。
   # mcp_serverを認証なしで使用する場合は指定しないでください。
   # 以下の3つから1つを選択して設定します:
@@ -66,7 +63,7 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
 
   credential_provider_configuration {
     #-----------------------------------------------------------
-    # オプション1: Gateway IAM Role認証
+    # オプション1: Gateway IAM Role認証 (gateway_iam_role)
     #-----------------------------------------------------------
     # GatewayのIAMロールを認証に使用します。
     # 空のブロックとして指定します。
@@ -109,8 +106,8 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
 
     # oauth {
     #   # provider_arn (Required)
-    #   # 設定内容: OAuth認証用のOIDCプロバイダーのARNを指定します。
-    #   # 設定可能な値: 有効なOIDCプロバイダーARN
+    #   # 設定内容: OAuth認証用のOAuth認証情報プロバイダーのARNを指定します。
+    #   # 設定可能な値: 有効なOAuth認証情報プロバイダーARN
     #   provider_arn = "arn:aws:iam::123456789012:oidc-provider/oauth.example.com"
     #
     #   # scopes (Required)
@@ -150,8 +147,9 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
     # MCP設定 (mcp)
     #-----------------------------------------------------------
     # Model Context Protocol (MCP) の設定です。
-    # 以下の4つから1つを選択して設定します:
+    # 以下の5つから1つを選択して設定します:
     #   - lambda: Lambda関数ターゲット
+    #   - api_gateway: API Gateway REST APIターゲット
     #   - mcp_server: MCPサーバーターゲット
     #   - open_api_schema: OpenAPIスキーマベースのターゲット
     #   - smithy_model: Smithyモデルベースのターゲット
@@ -360,7 +358,81 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
       }
 
       #---------------------------------------------------------
-      # オプション2: MCPサーバーターゲット (mcp_server)
+      # オプション2: API Gatewayターゲット (api_gateway)
+      #---------------------------------------------------------
+      # API Gateway REST APIステージをターゲットとして使用します。
+      # REST APIのパスとメソッドをMCPツールとして公開します。
+
+      # api_gateway {
+      #   # rest_api_id (Required)
+      #   # 設定内容: 呼び出すAPI Gateway REST APIのIDを指定します。
+      #   # 設定可能な値: 有効なREST API ID
+      #   rest_api_id = aws_api_gateway_rest_api.example.id
+      #
+      #   # stage (Required)
+      #   # 設定内容: ターゲットとして追加するREST APIのステージ名を指定します。
+      #   # 設定可能な値: 有効なステージ名
+      #   stage = "prod"
+      #
+      #   #-----------------------------------------------------
+      #   # API Gatewayツール設定 (api_gateway_tool_configuration)
+      #   #-----------------------------------------------------
+      #   # ツールのフィルタリングとオーバーライドの設定です。
+      #
+      #   api_gateway_tool_configuration {
+      #     #---------------------------------------------------
+      #     # ツールフィルター (tool_filter)
+      #     #---------------------------------------------------
+      #     # パスとメソッドパターンで公開するツールをフィルタリングします。
+      #     # 複数のtool_filterブロックを指定可能です。
+      #
+      #     tool_filter {
+      #       # filter_path (Required)
+      #       # 設定内容: REST APIでマッチさせるリソースパスを指定します。
+      #       # 設定可能な値: 完全パス（例: "/pets"）またはワイルドカードパス（例: "/pets/*"）
+      #       # 注意: REST APIに存在するパスと一致する必要があります
+      #       filter_path = "/pets/*"
+      #
+      #       # methods (Required)
+      #       # 設定内容: フィルタリングするHTTPメソッドのリストを指定します。
+      #       # 設定可能な値: "GET", "DELETE", "HEAD", "OPTIONS", "PATCH", "PUT", "POST"
+      #       methods = ["GET", "POST"]
+      #     }
+      #
+      #     #---------------------------------------------------
+      #     # ツールオーバーライド (tool_override)
+      #     #---------------------------------------------------
+      #     # ツール定義を明示的にカスタマイズします。
+      #     # 複数のtool_overrideブロックを指定可能です。
+      #
+      #     tool_override {
+      #       # name (Required)
+      #       # 設定内容: ツールの名前を指定します。
+      #       # 設定可能な値: Model Context Protocolでツールを識別する文字列
+      #       name = "list_pets"
+      #
+      #       # path (Required)
+      #       # 設定内容: REST APIのリソースパスを指定します。
+      #       # 設定可能な値: REST APIに存在するパス（例: "/pets"）
+      #       # 注意: REST APIに存在するパスと明示的に一致する必要があります
+      #       path = "/pets"
+      #
+      #       # method (Required)
+      #       # 設定内容: 公開するHTTPメソッドを指定します。
+      #       # 設定可能な値: "GET", "DELETE", "HEAD", "OPTIONS", "PATCH", "PUT", "POST"
+      #       method = "GET"
+      #
+      #       # description (Optional)
+      #       # 設定内容: ツールの説明を指定します。
+      #       # 設定可能な値: 文字列
+      #       # 省略時: APIのOpenAPI仕様からの説明を使用
+      #       description = "List all pets"
+      #     }
+      #   }
+      # }
+
+      #---------------------------------------------------------
+      # オプション3: MCPサーバーターゲット (mcp_server)
       #---------------------------------------------------------
       # 既存のMCPサーバーをターゲットとして使用します。
 
@@ -372,7 +444,7 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
       # }
 
       #---------------------------------------------------------
-      # オプション3: OpenAPIスキーマターゲット (open_api_schema)
+      # オプション4: OpenAPIスキーマターゲット (open_api_schema)
       #---------------------------------------------------------
       # OpenAPI仕様を使用してREST APIをMCPツールに変換します。
 
@@ -393,7 +465,7 @@ resource "aws_bedrockagentcore_gateway_target" "example" {
       # }
 
       #---------------------------------------------------------
-      # オプション4: Smithyモデルターゲット (smithy_model)
+      # オプション5: Smithyモデルターゲット (smithy_model)
       #---------------------------------------------------------
       # Smithyモデル定義を使用してMCPツールを構築します。
 

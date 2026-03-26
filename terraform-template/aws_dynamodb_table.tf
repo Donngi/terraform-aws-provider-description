@@ -25,8 +25,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.38.0
+# Generated: 2026-03-26
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -144,6 +144,11 @@ resource "aws_dynamodb_table" "example" {
   #-------------------------------------------------------------
   # リストア設定（Point-in-Time Recovery からの復元）
   #-------------------------------------------------------------
+
+  # restore_backup_arn (Optional)
+  # 設定内容: リストア元の DynamoDB バックアップの ARN を指定します。
+  # 注意: バックアップからテーブルを復元する場合に使用します。
+  restore_backup_arn = null
 
   # restore_source_name (Optional)
   # 設定内容: リストア元のテーブル名を指定します。

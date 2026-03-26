@@ -14,8 +14,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkfirewall_firewall_policy
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.38.0
+# Generated: 2026-03-26
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -96,10 +96,19 @@ resource "aws_networkfirewall_firewall_policy" "example" {
     # 省略時: ルールグループのデフォルトアクションに従います。
     stateful_default_actions = ["aws:drop_strict"]
 
+    # enable_tls_session_holding (Optional)
+    # 設定内容: TLSインスペクションがServer Name Indication (SNI) ルールを評価するまで、
+    #           TCPおよびTLSパケットが宛先サーバーに到達するのを防止するかどうかを指定します。
+    # 設定可能な値: true, false
+    # 省略時: false
+    # 注意: trueに設定する場合、tls_inspection_configuration_arnの指定が必要です。
+    enable_tls_session_holding = null
+
     # tls_inspection_configuration_arn (Optional)
     # 設定内容: TLSインスペクションを行う設定のARNを指定します。
     # 設定可能な値: aws_networkfirewall_tls_inspection_configurationリソースのARN
     # 省略時: TLSインスペクションなし
+    # 注意: リソース作成時にのみ追加可能です。既存ポリシーへの後からの追加はできません。
     tls_inspection_configuration_arn = null
 
     #-----------------------------------------------------------
@@ -116,7 +125,7 @@ resource "aws_networkfirewall_firewall_policy" "example" {
       rule_variables {
         # key (Required)
         # 設定内容: ルール変数の名前を指定します。
-        # 設定可能な値: 文字列（例: "HOME_NET", "EXTERNAL_NET"）
+        # 設定可能な値: 文字列（例: "HOME_NET"）
         key = "HOME_NET"
 
         # ip_set (Required)
@@ -162,7 +171,7 @@ resource "aws_networkfirewall_firewall_policy" "example" {
         # tcp_idle_timeout_seconds (Optional)
         # 設定内容: TCPアイドルセッションのタイムアウト秒数を指定します。
         # 設定可能な値: 60〜6000（秒）
-        # 省略時: デフォルト値を使用
+        # 省略時: 350
         tcp_idle_timeout_seconds = 350
       }
     }
@@ -189,6 +198,8 @@ resource "aws_networkfirewall_firewall_policy" "example" {
 
       # deep_threat_inspection (Optional)
       # 設定内容: 深層脅威検査を有効にするかどうかを指定します。
+      #           AWSがネットワークトラフィックのサービスログを分析し、
+      #           脅威インジケーターを特定してマネージドルールグループを改善します。
       # 設定可能な値: "ENABLED", "DISABLED"
       # 省略時: AWSが自動的に判断します。
       deep_threat_inspection = null

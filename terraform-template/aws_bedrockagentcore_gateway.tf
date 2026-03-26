@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/bedrockagentcore_gateway
 #
-# Provider Version: 6.37.0
-# Generated: 2026-03-20
+# Provider Version: 6.38.0
+# Generated: 2026-03-26
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -126,6 +126,52 @@ resource "aws_bedrockagentcore_gateway" "example" {
       # 設定内容: トークンへのアクセスを許可するスコープのセットを指定します。
       # 設定可能な値: 文字列のセット
       allowed_scopes = ["openid", "email"]
+
+      # custom_claim (Optional, 複数指定可)
+      # 設定内容: カスタムクレーム検証の名前・値・演算を定義します。
+      # 用途: JWTトークン内のカスタムクレームに基づくアクセス制御に使用します。
+      custom_claim {
+        # inbound_token_claim_name (Required)
+        # 設定内容: 検証対象のカスタムクレームフィールド名を指定します。
+        # 設定可能な値: 文字列
+        inbound_token_claim_name = "department"
+
+        # inbound_token_claim_value_type (Required)
+        # 設定内容: クレーム値のデータ型を指定します。
+        # 設定可能な値:
+        #   - "STRING": 単一の文字列値
+        #   - "STRING_ARRAY": 文字列配列
+        inbound_token_claim_value_type = "STRING"
+
+        # authorizing_claim_match_value (Required)
+        # 設定内容: マッチング値とその関係を定義します。
+        authorizing_claim_match_value {
+          # claim_match_operator (Required)
+          # 設定内容: クレームフィールド値とマッチング値の関係を指定します。
+          # 設定可能な値:
+          #   - "EQUALS": 完全一致（inbound_token_claim_value_typeが"STRING"の場合のみ）
+          #   - "CONTAINS": 部分一致（inbound_token_claim_value_typeが"STRING_ARRAY"の場合のみ）
+          #   - "CONTAINS_ANY": いずれかが一致（inbound_token_claim_value_typeが"STRING_ARRAY"の場合のみ）
+          claim_match_operator = "EQUALS"
+
+          # claim_match_value (Required)
+          # 設定内容: マッチング対象の値を定義します。
+          # 注意: match_value_stringとmatch_value_string_listのいずれか一方を指定
+          claim_match_value {
+            # match_value_string (Optional)
+            # 設定内容: マッチング対象の文字列値を指定します。
+            # 用途: claim_match_operatorが"EQUALS"または"CONTAINS"の場合に使用
+            # 注意: match_value_string_listとは排他的
+            match_value_string = "engineering"
+
+            # match_value_string_list (Optional)
+            # 設定内容: マッチング対象の文字列リストを指定します。
+            # 用途: claim_match_operatorが"CONTAINS_ANY"の場合に使用
+            # 注意: match_value_stringとは排他的
+            # match_value_string_list = ["engineering", "platform"]
+          }
+        }
+      }
     }
   }
 
@@ -148,6 +194,7 @@ resource "aws_bedrockagentcore_gateway" "example" {
       # 設定内容: MCPの検索タイプを指定します。
       # 設定可能な値:
       #   - "SEMANTIC": セマンティック検索。自然言語クエリでツールを検索可能
+      #   - "HYBRID": ハイブリッド検索。セマンティック検索とキーワード検索を組み合わせた検索
       # 関連機能: ツールのセマンティック検索
       #   自然言語クエリを使用してGateway内のツールを検索できます。
       #   Gateway作成時にのみ有効化可能で、作成者にはbedrock-agentcore:SynchronizeGatewayTargets
