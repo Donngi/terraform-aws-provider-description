@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3control_storage_lens_configuration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-05
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -61,6 +61,15 @@ resource "aws_s3control_storage_lens_configuration" "example" {
     #   - false: ダッシュボードを無効化
     # 注意: 無効化してもhistoricデータは保持期間内アクセス可能です。
     enabled = true
+
+    # prefix_delimiter (Optional)
+    # 設定内容: プレフィックスレベルのメトリクスで使用される区切り文字を指定します。
+    # 設定可能な値: 1文字の文字列（通常は"/"）
+    # 省略時: デフォルトのdelimiter設定を使用
+    # 関連機能: プレフィックスデリミタ
+    #   オブジェクトキー内の階層レベルを区切る文字を定義します。
+    #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_lens.html
+    prefix_delimiter = "/"
 
     #-----------------------------------------------------------
     # アカウントレベル設定
@@ -117,6 +126,22 @@ resource "aws_s3control_storage_lens_configuration" "example" {
         # 設定可能な値:
         #   - true: 高度なデータ保護メトリクスを有効化
         #   - false: 高度なデータ保護メトリクスを無効化
+        # 省略時: false
+        enabled = false
+      }
+
+      # advanced_performance_metrics (Optional)
+      # 設定内容: アカウントレベルでの高度なパフォーマンスメトリクスの有効化を指定します。
+      # 関連機能: 高度なパフォーマンスメトリクス（有料）
+      #   レイテンシやスループットなどの詳細なパフォーマンス情報を提供します。
+      #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-lens-use-cases.html
+      # 注意: 高度なメトリクスには追加料金が発生します。
+      advanced_performance_metrics {
+        # enabled (Optional)
+        # 設定内容: 高度なパフォーマンスメトリクスを有効にするかを指定します。
+        # 設定可能な値:
+        #   - true: 高度なパフォーマンスメトリクスを有効化
+        #   - false: 高度なパフォーマンスメトリクスを無効化
         # 省略時: false
         enabled = false
       }
@@ -187,6 +212,22 @@ resource "aws_s3control_storage_lens_configuration" "example" {
           # 設定可能な値:
           #   - true: バケットレベル高度なデータ保護メトリクスを有効化
           #   - false: バケットレベル高度なデータ保護メトリクスを無効化
+          # 省略時: false
+          enabled = false
+        }
+
+        # advanced_performance_metrics (Optional)
+        # 設定内容: バケットレベルでの高度なパフォーマンスメトリクスの有効化を指定します。
+        # 関連機能: バケットレベル高度なパフォーマンスメトリクス（有料）
+        #   バケット単位でのレイテンシやスループットなどの詳細なパフォーマンス情報を提供します。
+        #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-lens-use-cases.html
+        # 注意: 高度なメトリクスには追加料金が発生します。
+        advanced_performance_metrics {
+          # enabled (Optional)
+          # 設定内容: バケットレベル高度なパフォーマンスメトリクスを有効にするかを指定します。
+          # 設定可能な値:
+          #   - true: バケットレベル高度なパフォーマンスメトリクスを有効化
+          #   - false: バケットレベル高度なパフォーマンスメトリクスを無効化
           # 省略時: false
           enabled = false
         }
@@ -385,7 +426,112 @@ resource "aws_s3control_storage_lens_configuration" "example" {
           # }
         }
       }
+
+      #---------------------------------------------------------
+      # Storage Lensテーブルエクスポート設定
+      #---------------------------------------------------------
+
+      # storage_lens_table_destination (Optional)
+      # 設定内容: S3 Storage Lensテーブル形式でのエクスポート設定を指定します。
+      # 関連機能: Storage Lensテーブル
+      #   メトリクスデータをS3 Tablesのテーブル形式で保存します。
+      #   Apache Iceberg互換のテーブル形式により、AthenaやEMRからの分析が容易になります。
+      #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_lens_view_metrics_export.html
+      # 注意: 利用にはS3 Tablesの事前設定と追加料金が発生します。
+      # storage_lens_table_destination {
+      #   # enabled (Required)
+      #   # 設定内容: Storage Lensテーブルへのエクスポートを有効にするかを指定します。
+      #   # 設定可能な値:
+      #   #   - true: テーブルエクスポートを有効化
+      #   #   - false: テーブルエクスポートを無効化
+      #   enabled = true
+      #
+      #   # encryption (Optional)
+      #   # 設定内容: テーブルファイルの暗号化設定を指定します。
+      #   encryption {
+      #     # sse_s3 (Optional)
+      #     # 設定内容: S3マネージド暗号化キー（SSE-S3）を使用した暗号化を指定します。
+      #     # 注意: sse_kmsと排他的（どちらか一方のみ指定可能）
+      #     sse_s3 {}
+      #
+      #     # sse_kms (Optional)
+      #     # 設定内容: KMSカスタマー管理キー（SSE-KMS）を使用した暗号化を指定します。
+      #     # 注意: sse_s3と排他的（どちらか一方のみ指定可能）
+      #     # sse_kms {
+      #     #   # key_id (Required)
+      #     #   # 設定内容: 使用するKMSキーのARNを指定します。
+      #     #   key_id = "arn:aws:kms:ap-northeast-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+      #     # }
+      #   }
+      # }
     }
+
+    #-----------------------------------------------------------
+    # 拡張プレフィックスデータエクスポート設定
+    #-----------------------------------------------------------
+
+    # expanded_prefixes_data_export (Optional)
+    # 設定内容: 拡張プレフィックスデータエクスポートの設定を指定します。
+    # 関連機能: 拡張プレフィックスエクスポート
+    #   通常のプレフィックスメトリクスより詳細な、拡張プレフィックスレベルの
+    #   データをS3バケットまたはStorage Lensテーブルにエクスポートします。
+    #   - https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_lens_view_metrics_export.html
+    # 注意: 拡張プレフィックスエクスポートには追加料金が発生します。
+    # expanded_prefixes_data_export {
+    #   # s3_bucket_destination (Optional)
+    #   # 設定内容: 拡張プレフィックスデータの出力先S3バケット設定を指定します。
+    #   s3_bucket_destination {
+    #     # account_id (Required)
+    #     # 設定内容: 出力先バケットを所有するAWSアカウントIDを指定します。
+    #     # 設定可能な値: 有効なAWSアカウントID（12桁の数字）
+    #     account_id = "123456789012"
+    #
+    #     # arn (Required)
+    #     # 設定内容: 出力先S3バケットのARNを指定します。
+    #     # 設定可能な値: 有効なS3バケットARN
+    #     arn = "arn:aws:s3:::my-storage-lens-expanded-exports"
+    #
+    #     # format (Required)
+    #     # 設定内容: エクスポートファイルのフォーマットを指定します。
+    #     # 設定可能な値:
+    #     #   - "CSV": カンマ区切り形式
+    #     #   - "Parquet": 列指向フォーマット
+    #     format = "Parquet"
+    #
+    #     # output_schema_version (Required)
+    #     # 設定内容: 出力スキーマのバージョンを指定します。
+    #     # 設定可能な値: "V_1"
+    #     output_schema_version = "V_1"
+    #
+    #     # prefix (Optional)
+    #     # 設定内容: 出力先バケット内のプレフィックスを指定します。
+    #     # 省略時: バケットのルートに出力
+    #     prefix = "expanded-prefixes/"
+    #
+    #     # encryption (Optional)
+    #     # 設定内容: エクスポートファイルの暗号化設定を指定します。
+    #     encryption {
+    #       sse_s3 {}
+    #       # sse_kms {
+    #       #   key_id = "arn:aws:kms:ap-northeast-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+    #       # }
+    #     }
+    #   }
+    #
+    #   # storage_lens_table_destination (Optional)
+    #   # 設定内容: 拡張プレフィックスデータのStorage Lensテーブル出力先設定を指定します。
+    #   # storage_lens_table_destination {
+    #   #   # enabled (Required)
+    #   #   # 設定内容: テーブルエクスポートを有効にするかを指定します。
+    #   #   enabled = true
+    #   #
+    #   #   # encryption (Optional)
+    #   #   # 設定内容: テーブルファイルの暗号化設定を指定します。
+    #   #   encryption {
+    #   #     sse_s3 {}
+    #   #   }
+    #   # }
+    # }
 
     #-----------------------------------------------------------
     # スコープ設定（除外）
@@ -472,10 +618,7 @@ resource "aws_s3control_storage_lens_configuration" "example" {
 #---------------------------------------------------------------
 # このリソースは以下の属性をエクスポートします:
 #
-# - arn: S3 Storage Lens設定のAmazon Resource Name (ARN)
-#
+# - arn: S3 Storage Lens設定のARN
 # - id: S3 Storage Lens設定のID（account_id:config_id形式）
-#
-# - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
-#             リソースに割り当てられたすべてのタグのマップ。
+# - tags_all: 継承タグを含む全タグマップ
 #---------------------------------------------------------------

@@ -13,8 +13,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition
 #
-# Provider Version: 6.28.0
-# Generated: 2026-01-18
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -1057,6 +1057,46 @@ resource "aws_ecs_task_definition" "example" {
     #     # 設定可能な値: 有効なFQDN
     #     domain = "example.com"
     #   }
+    # }
+
+    #-----------------------------------------------------------
+    # ネストブロック: s3files_volume_configuration
+    #-----------------------------------------------------------
+    # 設定内容: Amazon S3 Filesボリュームの設定を定義します。
+    # 詳細: Amazon S3に格納されたデータを共有ファイルシステムとしてタスクにマウントします。
+    #       Fargate起動タイプとManaged Instances起動タイプで使用可能です（EC2では非対応）。
+    #       転送時暗号化は必須で、Task IAMロールにファイルシステムへのアタッチ権限が必要です。
+    # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/s3files-volumes.html
+
+    # s3files_volume_configuration {
+    #   # file_system_arn (Required)
+    #   # 設定内容: マウントするS3ファイルシステムの完全なARNを指定します。
+    #   # 設定可能な値: 有効なS3ファイルシステムARN
+    #   # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specify-s3files-config.html
+    #   file_system_arn = "arn:aws:s3:us-east-1:123456789012:accesspoint/my-s3files-fs"
+    #
+    #   # access_point_arn (Optional)
+    #   # 設定内容: 使用するS3 Filesアクセスポイントの完全なARNを指定します。
+    #   # 設定可能な値: 有効なS3 FilesアクセスポイントARN
+    #   # 詳細: アクセスポイントを使用すると、アプリケーション固有のアクセス制御が可能になります。
+    #   #       access_point_arnを指定する場合、root_directoryは省略するか "/" を設定する必要があります。
+    #   # 参考: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/s3files-volumes.html
+    #   access_point_arn = "arn:aws:s3:us-east-1:123456789012:accesspoint/my-access-point"
+    #
+    #   # root_directory (Optional)
+    #   # 設定内容: S3ファイルシステム内のルートディレクトリとしてマウントするパスを指定します。
+    #   # 設定可能な値: S3ファイルシステム内のパス
+    #   # 省略時: S3ファイルシステムのルート ("/") が使用されます。
+    #   # 注意: access_point_arnが指定されている場合は省略するか "/" を設定する必要があります
+    #   #       （アクセスポイントで設定されたパスが強制適用されるため）。
+    #   root_directory = "/data"
+    #
+    #   # transit_encryption_port (Optional)
+    #   # 設定内容: ECSホストとS3ファイルシステム間の暗号化通信に使用するポートを指定します。
+    #   # 設定可能な値: 1-65535の整数
+    #   # 省略時: Amazon S3 Filesマウントヘルパーが使用するポート選択戦略に従います。
+    #   # 詳細: S3 Filesでは転送時暗号化が必須のため、本ポートを介して暗号化通信が行われます。
+    #   transit_encryption_port = 2049
     # }
   }
 }

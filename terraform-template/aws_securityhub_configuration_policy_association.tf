@@ -19,8 +19,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/securityhub_configuration_policy_association
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-19
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -47,9 +47,13 @@ resource "aws_securityhub_configuration_policy_association" "example" {
   #-------------------------------------------------------------
 
   # policy_id (Required)
-  # 設定内容: ターゲットに関連付ける設定ポリシーのUUID（汎用一意識別子）を指定します。
-  # 設定可能な値: aws_securityhub_configuration_policy リソースの id 属性など、
-  #               有効な設定ポリシーのUUID文字列
+  # 設定内容: ターゲットに関連付ける設定ポリシーのUUID（汎用一意識別子）、
+  #           または自己管理（Self-managed）を示す特殊値を指定します。
+  # 設定可能な値:
+  #   - 設定ポリシーのUUID文字列: aws_securityhub_configuration_policy リソースの
+  #     id 属性などの有効な設定ポリシーUUID
+  #   - "SELF_MANAGED_SECURITY_HUB": 自己管理設定。ターゲットを中央設定の
+  #     管理対象から外し、各アカウントが個別にSecurity Hub設定を管理します
   # 参考: https://docs.aws.amazon.com/securityhub/latest/userguide/create-associate-policy.html
   policy_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 

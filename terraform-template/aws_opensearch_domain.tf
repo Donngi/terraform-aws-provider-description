@@ -1,560 +1,930 @@
-# aws_opensearch_domain
-# Amazon OpenSearch Service のドメインを管理するリソース
+#---------------------------------------------------------------
+# AWS OpenSearch Domain
+#---------------------------------------------------------------
 #
-# Amazon OpenSearch Service は、ログ分析、リアルタイムアプリケーションモニタリング、
-# 全文検索などのユースケース向けのマネージド検索・分析エンジン
-# ドメインはOpenSearch（またはElasticsearch）クラスターに相当する
+# Amazon OpenSearch Serviceのドメインをプロビジョニングするリソースです。
+# OpenSearchドメインは、ログ分析、リアルタイムアプリケーションモニタリング、
+# クリックストリーム分析、全文検索などのユースケース向けの
+# マネージド検索・分析クラスターを提供します。
 #
-# Terraform Registry: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/opensearch_domain
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# AWS公式ドキュメント:
+#   - Amazon OpenSearch Service概要: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html
+#   - OpenSearchドメインの作成と管理: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html
+#   - OpenSearch Service の制限: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/limits.html
+#
+# Terraform Registry:
+#   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/opensearch_domain
+#
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
-
-#---------------------------------------
-# aws_opensearch_domain リソース定義
-#---------------------------------------
+#
+#---------------------------------------------------------------
 
 resource "aws_opensearch_domain" "example" {
-
-  #---------------------------------------
+  #-------------------------------------------------------------
   # 基本設定
-  #---------------------------------------
+  #-------------------------------------------------------------
 
-  # 設定内容: ドメイン名（変更不可）
-  # 設定可能な値: 3〜28文字、英小文字で開始、英小文字・数字・ハイフンのみ使用可能
-  # 省略時: 省略不可（必須）
+  # domain_name (Required, Forces new resource)
+  # 設定内容: OpenSearchドメインの名前を指定します。
+  # 設定可能な値: 3〜28文字。英小文字で開始し、英小文字・数字・ハイフンのみ使用可能。
+  # 注意: 作成後の変更不可。リソースの再作成が必要。
+  # 参考: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomains.html
   domain_name = "example-domain"
 
-  # 設定内容: OpenSearch/Elasticsearch エンジンバージョン
-  # 設定可能な値: "OpenSearch_2.15", "OpenSearch_2.11", "Elasticsearch_7.10" など
-  # 省略時: AWSが最新のOpenSearchバージョンを自動選択
-  engine_version = "OpenSearch_2.11"
+  # engine_version (Optional)
+  # 設定内容: OpenSearchまたはElasticsearchのエンジンバージョンを指定します。
+  # 設定可能な値:
+  #   - "OpenSearch_X.Y" 形式（例: "OpenSearch_2.17", "OpenSearch_2.11"）
+  #   - "Elasticsearch_X.Y" 形式（例: "Elasticsearch_7.10"）
+  # 省略時: AWSが利用可能な最新のOpenSearchバージョンを使用
+  # 関連機能: OpenSearch Serviceでサポートされているバージョン
+  #   サービスソフトウェアと連動した特定エンジンバージョンを指定可能。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html#choosing-version
+  engine_version = "OpenSearch_2.17"
 
-  # 設定内容: ドメインのIPアドレスタイプ
-  # 設定可能な値: "ipv4", "dualstack"（IPv4/IPv6両対応、endpoint_v2を利用）
-  # 省略時: AWSがデフォルト設定を使用
+  # ip_address_type (Optional)
+  # 設定内容: ドメインのIPアドレスタイプを指定します。
+  # 設定可能な値:
+  #   - "ipv4": IPv4のみ対応
+  #   - "dualstack": IPv4とIPv6の両方対応
+  # 省略時: AWSのデフォルト動作（通常 "ipv4"）
+  # 関連機能: OpenSearch デュアルスタックサポート
+  #   IPv4/IPv6両方のクライアントからのアクセスを受け付けるエンドポイントを提供。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomain-dualstack.html
   ip_address_type = "ipv4"
 
-  # 設定内容: リソースを管理するAWSリージョン
-  # 設定可能な値: AWSリージョンコード（例: "us-east-1", "ap-northeast-1"）
+  #-------------------------------------------------------------
+  # リージョン設定
+  #-------------------------------------------------------------
+
+  # region (Optional)
+  # 設定内容: このリソースを管理するリージョンを指定します。
+  # 設定可能な値: 有効なAWSリージョンコード（例: ap-northeast-1, us-east-1）
   # 省略時: プロバイダー設定のリージョンを使用
+  # 参考: https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   region = null
 
-  # 設定内容: ドメインのアクセスポリシー（IAMポリシーJSONドキュメント）
-  # 設定可能な値: JSON形式のIAMポリシードキュメント文字列
-  # 省略時: AWSがデフォルト設定を使用
-  access_policies = null
+  #-------------------------------------------------------------
+  # アクセスポリシー設定
+  #-------------------------------------------------------------
 
-  # 設定内容: 詳細設定オプション（キーと値のマップ）
-  # 設定可能な値: "rest.action.multi.allow_explicit_index", "indices.fielddata.cache.size",
-  #               "indices.query.bool.max_clause_count", "override_main_response_version" など
-  # 省略時: AWSのデフォルト設定を使用（値は必ず文字列で指定する）
+  # access_policies (Optional)
+  # 設定内容: OpenSearchドメインへのアクセスを制御するIAMポリシードキュメントを指定します。
+  # 設定可能な値: JSON形式のIAMポリシー文字列
+  # 省略時: アクセスポリシーが設定されない（VPC内アクセスのみまたは細粒度アクセス制御のみで制御）
+  # 関連機能: OpenSearch Service のアクセスポリシー
+  #   ドメインレベルのアクセス制御。リソースベースポリシー、IDベースポリシー、
+  #   IPベースポリシーで制御可能。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ac.html
+  access_policies = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { AWS = "*" }
+        Action    = "es:*"
+        Resource  = "arn:aws:es:ap-northeast-1:123456789012:domain/example-domain/*"
+        Condition = {
+          IpAddress = {
+            "aws:SourceIp" = ["192.0.2.0/24"]
+          }
+        }
+      }
+    ]
+  })
+
+  #-------------------------------------------------------------
+  # 高度なオプション
+  #-------------------------------------------------------------
+
+  # advanced_options (Optional)
+  # 設定内容: OpenSearchの高度な設定オプションをマップ形式で指定します。
+  # 設定可能な値:
+  #   - "rest.action.multi.allow_explicit_index": "true" / "false"（_mklパスへの明示的なインデックス指定許可）
+  #   - "indices.fielddata.cache.size": "20"（フィールドデータキャッシュサイズの上限%）
+  #   - "indices.query.bool.max_clause_count": "1024"（boolクエリのclause最大数）
+  #   - "override_main_response_version": "true" / "false"
+  # 省略時: AWSのデフォルト設定
+  # 関連機能: OpenSearch advanced options
+  #   一部の値の更新時にはドメインの再起動が発生する場合あり。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomain-configure-advanced-options.html
   advanced_options = {
     "rest.action.multi.allow_explicit_index" = "true"
   }
 
-  # 設定内容: タグ
-  # 設定可能な値: キーと値のペア
-  # 省略時: タグなし
-  tags = {
-    Name        = "example-domain"
-    Environment = "production"
-  }
+  #-------------------------------------------------------------
+  # クラスター構成
+  #-------------------------------------------------------------
 
-  #---------------------------------------
-  # クラスター設定
-  #---------------------------------------
-
+  # cluster_config (Optional)
+  # 設定内容: ドメインのクラスター（インスタンス、ノード、AZ等）の設定ブロックです。
+  # 関連機能: OpenSearch クラスター構成
+  #   インスタンスタイプ・台数、専用マスタノード、UltraWarm/Coldノード、
+  #   マルチAZ構成等を指定。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-dedicatedmasternodes.html
   cluster_config {
-    # 設定内容: データノードのインスタンスタイプ
-    # 設定可能な値: "t3.small.search", "m6g.large.search", "r6g.large.search" など
-    # 省略時: AWSがデフォルト設定を使用
-    instance_type = "t3.small.search"
 
-    # 設定内容: データノード数
-    # 設定可能な値: 正の整数（1〜80）
-    # 省略時: AWSがデフォルト設定を使用
-    instance_count = 1
+    # instance_type (Optional)
+    # 設定内容: データノードのインスタンスタイプを指定します。
+    # 設定可能な値: OpenSearchサポート対象インスタンスタイプ（例: "r6g.large.search", "m6g.large.search", "t3.small.search"）
+    # 省略時: "m4.large.search"（プロバイダーデフォルト）
+    # 参考: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html
+    instance_type = "r6g.large.search"
 
-    # 設定内容: ゾーン分散（マルチAZ配置）を有効化するか
-    # 設定可能な値: true / false
+    # instance_count (Optional)
+    # 設定内容: クラスター内のデータノード（インスタンス）数を指定します。
+    # 設定可能な値: 1以上の整数
+    # 省略時: 1
+    instance_count = 3
+
+    # dedicated_master_enabled (Optional)
+    # 設定内容: 専用マスタノードを有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 専用マスタノードを有効化（クラスター安定性が向上）
+    #   - false: 専用マスタノード無効
     # 省略時: false
-    zone_awareness_enabled = false
+    # 推奨: 本番環境では有効化を推奨
+    dedicated_master_enabled = true
 
-    # 設定内容: 専用マスターノードを有効化するか
-    # 設定可能な値: true / false
+    # dedicated_master_count (Optional)
+    # 設定内容: 専用マスタノードの数を指定します。
+    # 設定可能な値: 3 または 5（推奨は3、大規模クラスターでは5）
+    # 省略時: 設定なし（dedicated_master_enabled=falseの場合）
+    dedicated_master_count = 3
+
+    # dedicated_master_type (Optional)
+    # 設定内容: 専用マスタノードのインスタンスタイプを指定します。
+    # 設定可能な値: OpenSearchサポート対象インスタンスタイプ（例: "c6g.large.search", "m6g.large.search"）
+    # 省略時: 設定なし（dedicated_master_enabled=trueの場合は明示指定推奨）
+    dedicated_master_type = "c6g.large.search"
+
+    # zone_awareness_enabled (Optional)
+    # 設定内容: マルチAZ配置（Zone Awareness）を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 複数AZにノードを分散配置
+    #   - false: 単一AZ配置
     # 省略時: false
-    dedicated_master_enabled = false
+    # 推奨: 本番環境では有効化を推奨
+    zone_awareness_enabled = true
 
-    # 設定内容: 専用マスターノード数（dedicated_master_enabled=true時）
-    # 設定可能な値: 3 または 5
-    # 省略時: AWSがデフォルト設定を使用
-    # dedicated_master_count = 3
-
-    # 設定内容: 専用マスターノードのインスタンスタイプ（dedicated_master_enabled=true時）
-    # 設定可能な値: "m6g.large.search", "r6g.large.search" など
-    # 省略時: AWSがデフォルト設定を使用
-    # dedicated_master_type = "m6g.large.search"
-
-    # 設定内容: UltraWarmストレージを有効化するか
-    # 設定可能な値: true / false
-    # 省略時: false
-    warm_enabled = false
-
-    # 設定内容: ウォームノード数（warm_enabled=true時に必須）
-    # 設定可能な値: 2〜150
-    # 省略時: AWSがデフォルト設定を使用
-    # warm_count = 2
-
-    # 設定内容: ウォームノードのインスタンスタイプ（warm_enabled=true時に必須）
-    # 設定可能な値: "ultrawarm1.medium.search", "ultrawarm1.large.search", "ultrawarm1.xlarge.search"
-    # 省略時: AWSがデフォルト設定を使用
-    # warm_type = "ultrawarm1.medium.search"
-
-    # 設定内容: スタンバイAZを持つMulti-AZ構成を有効化するか
-    # 設定可能な値: true / false（有効時はzone_awareness_enabledも必須）
-    # 省略時: false
-    multi_az_with_standby_enabled = false
-
-    # ゾーン分散設定（zone_awareness_enabled=true時に有効）
+    # zone_awareness_config (Optional)
+    # 設定内容: Zone Awarenessの詳細設定ブロックです。
+    # 注意: zone_awareness_enabled = true の場合に有効
     zone_awareness_config {
-      # 設定内容: アベイラビリティゾーン数
+
+      # availability_zone_count (Optional)
+      # 設定内容: クラスターを分散させるAZの数を指定します。
       # 設定可能な値: 2 または 3
       # 省略時: 2
-      availability_zone_count = 2
+      availability_zone_count = 3
     }
 
-    # コールドストレージ設定（専用マスターノードとUltraWarm有効時のみ使用可能）
+    # multi_az_with_standby_enabled (Optional)
+    # 設定内容: スタンバイ付きマルチAZ機能を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 3AZ構成でスタンバイAZを設定（耐障害性が向上）
+    #   - false: スタンバイ無効
+    # 省略時: false
+    # 関連機能: OpenSearch Multi-AZ with Standby
+    #   3つのAZを使用しスタンバイAZを設定。AZ障害時の自動フェイルオーバーを高速化。
+    #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+    multi_az_with_standby_enabled = false
+
+    # warm_enabled (Optional)
+    # 設定内容: UltraWarmストレージを有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: UltraWarmノードを利用（読み取り専用ログ等の低コスト保管に最適）
+    #   - false: UltraWarm無効
+    # 省略時: false
+    # 関連機能: OpenSearch UltraWarm
+    #   読み取り専用データを低コストで保管。S3バックエンドのストレージを使用。
+    #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+    warm_enabled = false
+
+    # warm_count (Optional)
+    # 設定内容: UltraWarmノードの数を指定します。
+    # 設定可能な値: 2〜150の整数
+    # 省略時: 設定なし（warm_enabled=falseの場合）
+    warm_count = null
+
+    # warm_type (Optional)
+    # 設定内容: UltraWarmノードのインスタンスタイプを指定します。
+    # 設定可能な値: "ultrawarm1.medium.search", "ultrawarm1.large.search", "ultrawarm1.xlarge.search"
+    # 省略時: 設定なし（warm_enabled=falseの場合）
+    warm_type = null
+
+    # cold_storage_options (Optional)
+    # 設定内容: コールドストレージの設定ブロックです。
+    # 関連機能: OpenSearch Cold Storage
+    #   アクセス頻度の低い古いデータを最も低コストで保管。
+    #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cold-storage.html
+    # 注意: warm_enabledがtrueでなければ利用不可
     cold_storage_options {
-      # 設定内容: コールドストレージを有効化するか
-      # 設定可能な値: true / false
-      # 省略時: AWSがデフォルト設定を使用
+
+      # enabled (Optional)
+      # 設定内容: コールドストレージを有効化するかを指定します。
+      # 設定可能な値:
+      #   - true: コールドストレージ有効
+      #   - false: コールドストレージ無効
+      # 省略時: false
       enabled = false
     }
 
-    # ノードオプション設定（特定ノードタイプの追加設定）
+    # node_options (Optional)
+    # 設定内容: コーディネーターノード等の追加ノードタイプの設定ブロックです。
+    # 関連機能: OpenSearch コーディネーターノード
+    #   検索リクエストやインデックス処理を分散しデータノード負荷を軽減する専用ノード。
+    #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-coordinator-nodes.html
     node_options {
-      # 設定内容: ノードタイプ
-      # 設定可能な値: "coordinator"
-      # 省略時: AWSがデフォルト設定を使用
+
+      # node_type (Optional)
+      # 設定内容: 追加ノードのタイプを指定します。
+      # 設定可能な値: "coordinator" 等
+      # 省略時: 設定なし
       node_type = "coordinator"
 
+      # node_config (Optional)
+      # 設定内容: ノードタイプ別の詳細構成ブロックです。
       node_config {
-        # 設定内容: ノードを有効化するか
-        # 設定可能な値: true / false
-        # 省略時: AWSがデフォルト設定を使用
-        enabled = false
 
-        # 設定内容: ノードのインスタンスタイプ
-        # 設定可能な値: サポートされているインスタンスタイプ
-        # 省略時: AWSがデフォルト設定を使用
-        # type = "m6g.large.search"
+        # enabled (Optional)
+        # 設定内容: 当該ノードタイプを有効化するかを指定します。
+        # 設定可能な値:
+        #   - true: 有効化
+        #   - false: 無効化
+        # 省略時: false
+        enabled = true
 
-        # 設定内容: ノード数
-        # 設定可能な値: 正の整数
-        # 省略時: AWSがデフォルト設定を使用
-        # count = 2
+        # type (Optional)
+        # 設定内容: ノードのインスタンスタイプを指定します。
+        # 設定可能な値: OpenSearchサポート対象インスタンスタイプ
+        # 省略時: 設定なし
+        type = "m6g.large.search"
+
+        # count (Optional)
+        # 設定内容: 当該タイプのノード数を指定します。
+        # 設定可能な値: 1以上の整数
+        # 省略時: 設定なし
+        count = 2
       }
     }
   }
 
-  #---------------------------------------
+  #-------------------------------------------------------------
   # EBSストレージ設定
-  #---------------------------------------
+  #-------------------------------------------------------------
 
+  # ebs_options (Optional)
+  # 設定内容: データノードに割り当てるEBSボリュームの設定ブロックです。
+  # 関連機能: OpenSearch EBSストレージ
+  #   データノードのストレージとしてEBSボリュームを使用。インスタンスストア使用時は無効化。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomain-configure-ebs.html
   ebs_options {
-    # 設定内容: EBSストレージを有効化するか
-    # 設定可能な値: true / false（t2/t3インスタンスはEBS必須）
-    # 省略時: 省略不可（必須）
+
+    # ebs_enabled (Required)
+    # 設定内容: EBSボリュームを使用するかを指定します。
+    # 設定可能な値:
+    #   - true: EBSボリュームを使用
+    #   - false: インスタンスストアを使用（i3.* 等のインスタンスのみ）
     ebs_enabled = true
 
-    # 設定内容: EBSボリュームタイプ
-    # 設定可能な値: "gp2", "gp3", "io1", "standard"
-    # 省略時: AWSがデフォルト設定を使用
+    # volume_type (Optional)
+    # 設定内容: EBSボリュームの種類を指定します。
+    # 設定可能な値: "standard", "gp2", "gp3", "io1"
+    # 省略時: AWSのデフォルト値（通常 "gp2"）
     volume_type = "gp3"
 
-    # 設定内容: EBSボリュームサイズ（GiB）
-    # 設定可能な値: ボリュームタイプとインスタンスタイプにより異なる
-    # 省略時: AWSがデフォルト設定を使用
-    volume_size = 20
+    # volume_size (Optional)
+    # 設定内容: 各データノードに割り当てるEBSボリュームのサイズ（GiB）を指定します。
+    # 設定可能な値: インスタンスタイプによる範囲制限あり
+    # 省略時: 設定なし（ebs_enabled=trueの場合は必須）
+    volume_size = 100
 
-    # 設定内容: IOPS（gp3/io1ボリュームタイプ時に適用）
-    # 設定可能な値: gp3は3000〜16000、io1は1000以上
-    # 省略時: AWSがデフォルト設定を使用
+    # iops (Optional)
+    # 設定内容: EBSボリュームに対するIOPSのベースラインを指定します。
+    # 設定可能な値: gp3/io1の場合に指定可能。範囲はvolume_typeに依存
+    # 省略時: AWSのデフォルト値
     iops = 3000
 
-    # 設定内容: スループット（MiB/s）（gp3ボリュームタイプ時のみ適用）
-    # 設定可能な値: 125〜1000
-    # 省略時: AWSがデフォルト設定を使用
+    # throughput (Optional)
+    # 設定内容: EBSボリュームのスループット（MiB/s）を指定します。
+    # 設定可能な値: gp3のみ。125〜1000
+    # 省略時: AWSのデフォルト値（通常125）
     throughput = 125
   }
 
-  #---------------------------------------
-  # 暗号化設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # 保存時の暗号化設定
+  #-------------------------------------------------------------
 
-  # 保存データの暗号化
+  # encrypt_at_rest (Optional)
+  # 設定内容: 保存データの暗号化設定ブロックです。
+  # 関連機能: OpenSearch 保存時暗号化
+  #   AWS KMSキーを使ってドメインのデータを暗号化。一度有効化すると無効化不可。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/encryption-at-rest.html
   encrypt_at_rest {
-    # 設定内容: 保存データの暗号化を有効化するか
-    # 設定可能な値: true / false
-    # 省略時: 省略不可（必須）
+
+    # enabled (Required)
+    # 設定内容: 保存時暗号化を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 暗号化有効
+    #   - false: 暗号化無効
+    # 注意: 一度trueにすると、ドメインの再作成なしでfalseに変更不可
     enabled = true
 
-    # 設定内容: KMSキーID（省略時はAWSマネージドキーを使用）
-    # 設定可能な値: KMSキーのARN（IDではなくARNを指定すること）
-    # 省略時: AWSマネージドキー（aws/es）を使用
-    kms_key_id = null
+    # kms_key_id (Optional)
+    # 設定内容: 暗号化に使用するKMSキーのIDまたはARNを指定します。
+    # 設定可能な値: KMSキーID、ARN、エイリアス名、エイリアスARN
+    # 省略時: AWS管理のデフォルトキー（aws/es）を使用
+    kms_key_id = "alias/aws/es"
   }
 
-  # ノード間の通信暗号化
+  #-------------------------------------------------------------
+  # ノード間通信の暗号化設定
+  #-------------------------------------------------------------
+
+  # node_to_node_encryption (Optional)
+  # 設定内容: ノード間通信の暗号化設定ブロックです。
+  # 関連機能: OpenSearch ノード間暗号化
+  #   クラスター内のノード間TLS通信を有効化。一度有効化すると無効化不可。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ntn.html
   node_to_node_encryption {
-    # 設定内容: ノード間暗号化を有効化するか
-    # 設定可能な値: true / false（OpenSearch_X.Y または Elasticsearch_6.0以降が必要）
-    # 省略時: 省略不可（必須）
+
+    # enabled (Required)
+    # 設定内容: ノード間暗号化を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: ノード間暗号化有効
+    #   - false: ノード間暗号化無効
+    # 注意: 一度trueにすると、ドメインの再作成なしでfalseに変更不可
     enabled = true
   }
 
-  #---------------------------------------
-  # エンドポイント設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # ドメインエンドポイント設定
+  #-------------------------------------------------------------
 
+  # domain_endpoint_options (Optional)
+  # 設定内容: ドメインのエンドポイントに関する設定ブロック（HTTPS強制、TLSポリシー、カスタムエンドポイント等）です。
+  # 関連機能: OpenSearch カスタムエンドポイント
+  #   独自ドメイン名・証明書によるカスタムエンドポイントを設定可能。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/customendpoint.html
   domain_endpoint_options {
-    # 設定内容: HTTPSを強制するか
-    # 設定可能な値: true / false
-    # 省略時: true
+
+    # enforce_https (Optional)
+    # 設定内容: HTTPSアクセスを強制するかを指定します。
+    # 設定可能な値:
+    #   - true: HTTPSアクセスのみ許可（推奨）
+    #   - false: HTTP/HTTPS両方許可
+    # 省略時: AWSのデフォルト値
+    # 注意: advanced_security_optionsを有効化する場合はtrue必須
     enforce_https = true
 
-    # 設定内容: TLSセキュリティポリシー
-    # 設定可能な値: "Policy-Min-TLS-1-0-2019-07", "Policy-Min-TLS-1-2-2019-07",
-    #               "Policy-Min-TLS-1-2-PFS-2023-10"
-    # 省略時: AWSがデフォルトポリシーを使用
+    # tls_security_policy (Optional)
+    # 設定内容: 接続時のTLSセキュリティポリシーを指定します。
+    # 設定可能な値:
+    #   - "Policy-Min-TLS-1-0-2019-07": TLS 1.0以上を許容
+    #   - "Policy-Min-TLS-1-2-2019-07": TLS 1.2以上を許容
+    #   - "Policy-Min-TLS-1-2-PFS-2023-10": TLS 1.2以上(PFS)
+    # 省略時: AWSのデフォルトポリシー
     tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
 
-    # 設定内容: カスタムエンドポイントを有効化するか
-    # 設定可能な値: true / false
+    # custom_endpoint_enabled (Optional)
+    # 設定内容: カスタムエンドポイントを有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: カスタムエンドポイント有効化
+    #   - false: 標準エンドポイントを使用
     # 省略時: false
     custom_endpoint_enabled = false
 
-    # 設定内容: カスタムエンドポイントのFQDN（custom_endpoint_enabled=true時）
+    # custom_endpoint (Optional)
+    # 設定内容: カスタムエンドポイントの完全修飾ドメイン名（FQDN）を指定します。
     # 設定可能な値: 有効なFQDN文字列
-    # 省略時: AWSがデフォルト設定を使用
-    # custom_endpoint = "search.example.com"
+    # 省略時: 設定なし
+    # 注意: custom_endpoint_enabled=trueの場合は必須
+    custom_endpoint = null
 
-    # 設定内容: カスタムエンドポイント用ACM証明書ARN（custom_endpoint_enabled=true時）
-    # 設定可能な値: ACM証明書のARN
-    # 省略時: AWSがデフォルト設定を使用
-    # custom_endpoint_certificate_arn = "arn:aws:acm:ap-northeast-1:123456789012:certificate/example"
+    # custom_endpoint_certificate_arn (Optional)
+    # 設定内容: カスタムエンドポイントに使用するACM証明書のARNを指定します。
+    # 設定可能な値: ACM管理のSSL/TLS証明書ARN
+    # 省略時: 設定なし
+    # 注意: custom_endpoint_enabled=trueの場合は必須
+    custom_endpoint_certificate_arn = null
   }
 
-  #---------------------------------------
+  #-------------------------------------------------------------
   # VPC設定
-  #---------------------------------------
+  #-------------------------------------------------------------
 
-  # 注意: vpc_options ブロックの追加・削除はリソースの再作成を強制する
-  # vpc_options {
-  #   # 設定内容: OpenSearch Serviceエンドポイントを作成するサブネットIDリスト
-  #   # 設定可能な値: 有効なサブネットIDの集合
-  #   # 省略時: AWSがデフォルト設定を使用
-  #   subnet_ids = ["subnet-0123456789abcdef0"]
-  #
-  #   # 設定内容: エンドポイントに適用するセキュリティグループIDリスト
-  #   # 設定可能な値: 有効なセキュリティグループIDの集合
-  #   # 省略時: VPCのデフォルトセキュリティグループを使用
-  #   security_group_ids = ["sg-0123456789abcdef0"]
-  #
-  #   # computed のみ（参照専用）
-  #   # availability_zones - ドメインが配置されているAZ一覧
-  #   # vpc_id            - ドメインが配置されているVPC ID
-  # }
+  # vpc_options (Optional)
+  # 設定内容: ドメインをVPC内に配置する場合の設定ブロックです。
+  # 関連機能: OpenSearch VPCサポート
+  #   インターネットを経由せず、VPC内のリソースから安全にアクセス可能。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html
+  # 注意: 一度パブリックエンドポイントで作成すると、VPC配置への変更不可（再作成必要）
+  vpc_options {
 
-  #---------------------------------------
-  # 高度なセキュリティ設定（Fine-grained access control）
-  #---------------------------------------
+    # subnet_ids (Optional)
+    # 設定内容: ドメインを配置するサブネットIDのセットを指定します。
+    # 設定可能な値: 有効なサブネットIDのセット
+    # 省略時: 設定なし
+    # 注意: zone_awareness_enabled=trueの場合は複数AZのサブネット指定必須
+    subnet_ids = ["subnet-12345678", "subnet-87654321"]
 
+    # security_group_ids (Optional)
+    # 設定内容: ドメインに関連付けるセキュリティグループIDのセットを指定します。
+    # 設定可能な値: 有効なセキュリティグループIDのセット
+    # 省略時: VPCのデフォルトセキュリティグループ
+    security_group_ids = ["sg-0123456789abcdef0"]
+  }
+
+  #-------------------------------------------------------------
+  # 高度なセキュリティ設定（細粒度アクセス制御）
+  #-------------------------------------------------------------
+
+  # advanced_security_options (Optional)
+  # 設定内容: 細粒度アクセス制御（Fine-Grained Access Control）の設定ブロックです。
+  # 関連機能: OpenSearch Fine-Grained Access Control
+  #   インデックス・ドキュメント・フィールドレベルのアクセス制御、
+  #   OpenSearch Dashboardsへのマルチテナント、SAML/JWT/Cognito認証等を提供。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html
+  # 注意: 有効化には encrypt_at_rest, node_to_node_encryption, enforce_https=true が必要
   advanced_security_options {
-    # 設定内容: Fine-grained access controlを有効化するか
-    # 設定可能な値: true / false（有効時はnode_to_node_encryption、encrypt_at_rest、enforce_httpsも必須）
-    # 省略時: 省略不可（必須）、trueからfalseへの変更はリソースの再作成を強制
+
+    # enabled (Required)
+    # 設定内容: 細粒度アクセス制御を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 細粒度アクセス制御を有効化
+    #   - false: 無効化
     enabled = true
 
-    # 設定内容: 匿名認証を有効化するか（既存ドメインでのFGAC有効化移行期間に使用）
-    # 設定可能な値: true / false
-    # 省略時: AWSがデフォルト設定を使用
-    anonymous_auth_enabled = false
-
-    # 設定内容: 内部ユーザーデータベースを有効化するか
-    # 設定可能な値: true / false
+    # internal_user_database_enabled (Optional)
+    # 設定内容: 内部ユーザーデータベースを使用するかを指定します。
+    # 設定可能な値:
+    #   - true: ユーザー名・パスワードで認証する内部DBを使用（master_user_options でユーザー作成）
+    #   - false: IAMユーザー/ロール等の外部認証を使用
     # 省略時: false
     internal_user_database_enabled = true
 
-    master_user_options {
-      # 設定内容: マスターユーザーのIAM ARN（IAM認証使用時、internal_user_database_enabled=false時に使用）
-      # 設定可能な値: IAMユーザーまたはロールのARN
-      # 省略時: AWSがデフォルト設定を使用
-      # master_user_arn = "arn:aws:iam::123456789012:user/master-user"
+    # anonymous_auth_enabled (Optional)
+    # 設定内容: 匿名認証を許可するかを指定します。
+    # 設定可能な値:
+    #   - true: 匿名アクセス許可
+    #   - false: 匿名アクセス不許可
+    # 省略時: false
+    anonymous_auth_enabled = false
 
-      # 設定内容: マスターユーザー名（internal_user_database_enabled=true時に使用）
+    # master_user_options (Optional)
+    # 設定内容: マスターユーザーの設定ブロックです。
+    master_user_options {
+
+      # master_user_name (Optional)
+      # 設定内容: 内部DBで作成するマスターユーザー名を指定します。
       # 設定可能な値: 文字列
-      # 省略時: AWSがデフォルト設定を使用
+      # 省略時: 設定なし
+      # 注意: internal_user_database_enabled=trueの場合に使用
       master_user_name = "admin"
 
-      # 設定内容: マスターユーザーパスワード（internal_user_database_enabled=true時、センシティブ値）
-      # 設定可能な値: 大文字・小文字・数字・特殊文字を含む8文字以上
-      # 省略時: AWSがデフォルト設定を使用
-      master_user_password = "YourSecurePassword1!"
+      # master_user_password (Optional, Sensitive)
+      # 設定内容: 内部DBで作成するマスターユーザーのパスワードを指定します。
+      # 設定可能な値: 8文字以上、大文字・小文字・数字・記号を各1文字以上含む
+      # 省略時: 設定なし
+      # 注意: 機密情報のためAWS Secrets Manager等で管理推奨
+      master_user_password = "ChangeMe!StrongP@ssw0rd"
+
+      # master_user_arn (Optional)
+      # 設定内容: マスターユーザーとして使用するIAMユーザー/ロールのARNを指定します。
+      # 設定可能な値: 有効なIAM ARN
+      # 省略時: 設定なし
+      # 注意: internal_user_database_enabled=falseの場合に使用
+      master_user_arn = null
     }
 
-    # JWT認証設定（OpenSearch 2.11以降で使用可能）
+    # jwt_options (Optional)
+    # 設定内容: JWT認証の設定ブロックです。
+    # 関連機能: OpenSearch JWT認証
+    #   外部IdPで発行したJWTトークンによる認証連携。
+    #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html#fgac-jwt
     jwt_options {
-      # 設定内容: JWT認証を有効化するか
-      # 設定可能な値: true / false
-      # 省略時: AWSがデフォルト設定を使用
+
+      # enabled (Optional)
+      # 設定内容: JWT認証を有効化するかを指定します。
+      # 設定可能な値:
+      #   - true: JWT認証有効
+      #   - false: JWT認証無効
+      # 省略時: false
       enabled = false
 
-      # 設定内容: JWT署名検証用のPEMエンコード公開鍵
-      # 設定可能な値: PEM形式の公開鍵文字列
-      # 省略時: AWSがデフォルト設定を使用
-      # public_key = null
+      # public_key (Optional)
+      # 設定内容: JWTトークンの署名検証に使用する公開鍵（PEM形式）を指定します。
+      # 設定可能な値: PEM形式公開鍵文字列
+      # 省略時: 設定なし
+      public_key = null
 
-      # 設定内容: JWTアサーション内のロール情報要素
-      # 設定可能な値: JWTクレームキー文字列
-      # 省略時: "roles"
-      # roles_key = "roles"
+      # subject_key (Optional)
+      # 設定内容: JWTのサブジェクト（ユーザー識別子）を保持するクレーム名を指定します。
+      # 設定可能な値: クレーム名文字列（例: "sub"）
+      # 省略時: AWSのデフォルト値（"sub"）
+      subject_key = "sub"
 
-      # 設定内容: JWTアサーション内のユーザー名要素
-      # 設定可能な値: JWTクレームキー文字列
-      # 省略時: "sub"
-      # subject_key = "sub"
+      # roles_key (Optional)
+      # 設定内容: JWTのロール情報を保持するクレーム名を指定します。
+      # 設定可能な値: クレーム名文字列（例: "roles"）
+      # 省略時: 設定なし
+      roles_key = "roles"
     }
   }
 
-  #---------------------------------------
-  # Cognito認証設定（OpenSearch Dashboards認証用）
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # AI/ML機能設定
+  #-------------------------------------------------------------
 
-  cognito_options {
-    # 設定内容: Cognito認証を有効化するか
-    # 設定可能な値: true / false
-    # 省略時: false
-    enabled = false
+  # aiml_options (Optional)
+  # 設定内容: OpenSearchのAI/ML関連機能の設定ブロックです。
+  # 関連機能: OpenSearch AI/ML統合
+  #   自然言語クエリ生成、ベクトル検索アクセラレーション等のAI/ML機能を有効化。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ml-amazon-connector.html
+  aiml_options {
 
-    # 設定内容: Cognito IDプールID
-    # 設定可能な値: 有効なCognito IDプールID
-    # 省略時: 省略不可（必須）
-    identity_pool_id = "ap-northeast-1:12345678-1234-1234-1234-123456789012"
+    # natural_language_query_generation_options (Optional)
+    # 設定内容: 自然言語クエリ生成機能の設定ブロックです。
+    natural_language_query_generation_options {
 
-    # 設定内容: Cognitoユーザープールのid
-    # 設定可能な値: 有効なCognitoユーザープールID
-    # 省略時: 省略不可（必須）
-    user_pool_id = "ap-northeast-1_XXXXXXXXX"
+      # desired_state (Optional)
+      # 設定内容: 自然言語クエリ生成機能の希望状態を指定します。
+      # 設定可能な値:
+      #   - "ENABLED": 有効化
+      #   - "DISABLED": 無効化
+      # 省略時: AWSのデフォルト値
+      desired_state = "DISABLED"
+    }
 
-    # 設定内容: OpenSearch ServiceがCognitoにアクセスするためのIAMロールARN
-    # 設定可能な値: AmazonOpenSearchServiceCognitoAccessポリシーが付与されたIAMロールのARN
-    # 省略時: 省略不可（必須）
-    role_arn = "arn:aws:iam::123456789012:role/opensearch-cognito-role"
+    # s3_vectors_engine (Optional)
+    # 設定内容: S3ベクターエンジンの設定ブロックです。
+    s3_vectors_engine {
+
+      # enabled (Optional)
+      # 設定内容: S3ベクターエンジンを有効化するかを指定します。
+      # 設定可能な値:
+      #   - true: 有効化
+      #   - false: 無効化
+      # 省略時: AWSのデフォルト値
+      enabled = false
+    }
+
+    # serverless_vector_acceleration (Optional)
+    # 設定内容: サーバーレスベクターアクセラレーションの設定ブロックです。
+    serverless_vector_acceleration {
+
+      # enabled (Optional)
+      # 設定内容: サーバーレスベクターアクセラレーションを有効化するかを指定します。
+      # 設定可能な値:
+      #   - true: 有効化
+      #   - false: 無効化
+      # 省略時: AWSのデフォルト値
+      enabled = false
+    }
   }
 
-  #---------------------------------------
-  # ログ設定（複数のlog_typeに対して複数ブロックを宣言可能）
-  #---------------------------------------
-
-  log_publishing_options {
-    # 設定内容: 発行するログの種類
-    # 設定可能な値: "INDEX_SLOW_LOGS", "SEARCH_SLOW_LOGS", "ES_APPLICATION_LOGS",
-    #               "AUDIT_LOGS"（AUDIT_LOGSはFine-grained access control有効時のみ）
-    # 省略時: 省略不可（必須）
-    log_type = "INDEX_SLOW_LOGS"
-
-    # 設定内容: ログ送信先CloudWatch Logs グループのARN
-    # 設定可能な値: CloudWatch LogsグループのARN
-    # 省略時: 省略不可（必須）
-    cloudwatch_log_group_arn = "arn:aws:logs:ap-northeast-1:123456789012:log-group:/aws/opensearch/example"
-
-    # 設定内容: このログ設定を有効化するか
-    # 設定可能な値: true / false
-    # 省略時: true
-    enabled = true
-  }
-
-  #---------------------------------------
+  #-------------------------------------------------------------
   # Auto-Tune設定
-  #---------------------------------------
+  #-------------------------------------------------------------
 
+  # auto_tune_options (Optional)
+  # 設定内容: OpenSearch Auto-Tuneの設定ブロックです。
+  # 関連機能: OpenSearch Auto-Tune
+  #   ワークロードに応じてクラスターのリソース使用率を自動最適化。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/auto-tune.html
   auto_tune_options {
-    # 設定内容: Auto-Tuneの希望状態
-    # 設定可能な値: "ENABLED", "DISABLED"
-    # 省略時: 省略不可（必須）
+
+    # desired_state (Required)
+    # 設定内容: Auto-Tuneの希望状態を指定します。
+    # 設定可能な値:
+    #   - "ENABLED": Auto-Tune有効
+    #   - "DISABLED": Auto-Tune無効
     desired_state = "ENABLED"
 
-    # 設定内容: Auto-Tune無効化時のロールバック設定
-    # 設定可能な値: "NO_ROLLBACK", "DEFAULT_ROLLBACK"
-    # 省略時: AWSがデフォルト設定を使用
+    # rollback_on_disable (Optional)
+    # 設定内容: Auto-Tune無効化時のロールバック動作を指定します。
+    # 設定可能な値:
+    #   - "NO_ROLLBACK": ロールバックしない
+    #   - "DEFAULT_ROLLBACK": デフォルト設定にロールバック
+    # 省略時: AWSのデフォルト値
     rollback_on_disable = "NO_ROLLBACK"
 
-    # 設定内容: オフピーク時間枠を使用するか（true時はmaintenance_scheduleブロックは指定不可）
-    # 設定可能な値: true / false
-    # 省略時: false
+    # use_off_peak_window (Optional)
+    # 設定内容: Auto-Tuneのメンテナンスをオフピークウィンドウで実行するかを指定します。
+    # 設定可能な値:
+    #   - true: オフピークウィンドウを使用
+    #   - false: maintenance_scheduleを使用
+    # 省略時: 設定なし
     use_off_peak_window = true
 
-    # メンテナンススケジュール（use_off_peak_window=false時に使用、複数指定可能）
-    # maintenance_schedule {
-    #   # 設定内容: メンテナンス開始時刻（RFC3339形式）
-    #   # 省略時: 省略不可（必須）
-    #   start_at = "2026-01-01T00:00:00Z"
-    #
-    #   # 設定内容: 繰り返しのCron式
-    #   # 省略時: 省略不可（必須）
-    #   cron_expression_for_recurrence = "cron(0 0 ? * 1 *)"
-    #
-    #   duration {
-    #     # 設定内容: メンテナンス時間の単位
-    #     # 設定可能な値: "HOURS"
-    #     # 省略時: 省略不可（必須）
-    #     unit = "HOURS"
-    #
-    #     # 設定内容: メンテナンス時間の値
-    #     # 設定可能な値: 正の数値
-    #     # 省略時: 省略不可（必須）
-    #     value = 2
-    #   }
-    # }
+    # maintenance_schedule (Optional)
+    # 設定内容: Auto-Tuneのメンテナンススケジュールの設定ブロックです。
+    # 注意: use_off_peak_window=falseの場合に使用。複数指定可能。
+    maintenance_schedule {
+
+      # start_at (Required)
+      # 設定内容: メンテナンス開始日時（ISO 8601形式UTC）を指定します。
+      # 設定可能な値: タイムスタンプ文字列（例: "2025-12-01T01:00:00Z"）
+      start_at = "2025-12-01T01:00:00Z"
+
+      # cron_expression_for_recurrence (Required)
+      # 設定内容: メンテナンスの繰り返しを指定するcron式です。
+      # 設定可能な値: 標準cron式
+      cron_expression_for_recurrence = "cron(0 1 ? * SUN *)"
+
+      # duration (Required)
+      # 設定内容: メンテナンスウィンドウの持続時間の設定ブロックです。
+      duration {
+
+        # value (Required)
+        # 設定内容: 持続時間の値を指定します。
+        # 設定可能な値: 1〜24（unitがHOURSの場合）
+        value = 2
+
+        # unit (Required)
+        # 設定内容: 持続時間の単位を指定します。
+        # 設定可能な値: "HOURS"
+        unit = "HOURS"
+      }
+    }
   }
 
-  #---------------------------------------
-  # オフピーク時間枠設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # オフピークウィンドウ設定
+  #-------------------------------------------------------------
 
+  # off_peak_window_options (Optional)
+  # 設定内容: オフピークウィンドウの設定ブロックです。
+  # 関連機能: OpenSearch オフピークウィンドウ
+  #   メンテナンス・サービスソフトウェア更新・Auto-Tune等の管理オペレーションを
+  #   トラフィックの少ない時間帯に集約。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/off-peak.html
   off_peak_window_options {
-    # 設定内容: オフピーク時間枠を有効化するか
-    # 設定可能な値: true / false
-    # 省略時: AWSがデフォルト設定を使用
+
+    # enabled (Optional)
+    # 設定内容: オフピークウィンドウを有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: オフピークウィンドウ有効
+    #   - false: 無効
+    # 省略時: AWSのデフォルト値
     enabled = true
 
+    # off_peak_window (Optional)
+    # 設定内容: オフピークウィンドウの開始時刻設定ブロックです。
     off_peak_window {
-      window_start_time {
-        # 設定内容: オフピーク開始時刻の時（UTC）
-        # 設定可能な値: 0〜23
-        # 省略時: AWSがデフォルト設定を使用
-        hours = 0
 
-        # 設定内容: オフピーク開始時刻の分（UTC）
+      # window_start_time (Optional)
+      # 設定内容: オフピークウィンドウの開始時刻ブロックです（ローカル時刻）。
+      window_start_time {
+
+        # hours (Optional)
+        # 設定内容: オフピークウィンドウ開始時刻の「時」を指定します。
+        # 設定可能な値: 0〜23
+        # 省略時: AWSのデフォルト値
+        hours = 2
+
+        # minutes (Optional)
+        # 設定内容: オフピークウィンドウ開始時刻の「分」を指定します。
         # 設定可能な値: 0〜59
-        # 省略時: AWSがデフォルト設定を使用
+        # 省略時: AWSのデフォルト値
         minutes = 0
       }
     }
   }
 
-  #---------------------------------------
-  # AI/ML設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # 自動スナップショット設定
+  #-------------------------------------------------------------
 
-  aiml_options {
-    natural_language_query_generation_options {
-      # 設定内容: 自然言語クエリ生成の希望状態
-      # 設定可能な値: "ENABLED", "DISABLED"
-      # 省略時: AWSがデフォルト設定を使用
-      desired_state = "DISABLED"
-    }
+  # snapshot_options (Optional)
+  # 設定内容: 自動スナップショットの設定ブロックです。
+  # 関連機能: OpenSearch 自動スナップショット
+  #   毎日1回の自動スナップショットの実行時刻を設定。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-snapshots.html
+  snapshot_options {
 
-    s3_vectors_engine {
-      # 設定内容: S3ベクターエンジンを有効化するか
-      # 設定可能な値: true / false
-      # 省略時: AWSがデフォルト設定を使用
-      enabled = false
-    }
-
-    serverless_vector_acceleration {
-      # 設定内容: GPU高速化ベクター検索を有効化するか
-      # 設定可能な値: true / false
-      # 省略時: AWSがデフォルト設定を使用
-      enabled = false
-    }
+    # automated_snapshot_start_hour (Required)
+    # 設定内容: 自動スナップショットを開始する時刻（UTC, 0〜23時）を指定します。
+    # 設定可能な値: 0〜23の整数
+    automated_snapshot_start_hour = 23
   }
 
-  #---------------------------------------
-  # IAM Identity Center統合設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # ソフトウェア更新設定
+  #-------------------------------------------------------------
 
+  # software_update_options (Optional)
+  # 設定内容: サービスソフトウェアの自動更新設定ブロックです。
+  # 関連機能: OpenSearch サービスソフトウェア更新
+  #   セキュリティパッチ・バグ修正・新機能のサービスソフトウェアを自動適用するかを制御。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/service-software.html
+  software_update_options {
+
+    # auto_software_update_enabled (Optional)
+    # 設定内容: サービスソフトウェアの自動更新を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 自動更新有効
+    #   - false: 自動更新無効
+    # 省略時: AWSのデフォルト値
+    auto_software_update_enabled = true
+  }
+
+  #-------------------------------------------------------------
+  # ログ出力設定
+  #-------------------------------------------------------------
+
+  # log_publishing_options (Optional)
+  # 設定内容: OpenSearchの各種ログをCloudWatch Logsに出力するかの設定ブロックです。
+  #           複数指定可能（INDEX_SLOW_LOGS / SEARCH_SLOW_LOGS / ES_APPLICATION_LOGS / AUDIT_LOGS）。
+  # 関連機能: OpenSearch ログ出力
+  #   インデックス/検索スローログ、エラーログ、監査ログ等をCloudWatch Logsに発行可能。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomain-configure-slow-logs.html
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/audit-logs.html
+  log_publishing_options {
+
+    # log_type (Required)
+    # 設定内容: 出力するログの種類を指定します。
+    # 設定可能な値:
+    #   - "INDEX_SLOW_LOGS": インデックス操作のスローログ
+    #   - "SEARCH_SLOW_LOGS": 検索操作のスローログ
+    #   - "ES_APPLICATION_LOGS": OpenSearchアプリケーションログ（エラー等）
+    #   - "AUDIT_LOGS": 監査ログ（advanced_security_options有効時のみ）
+    log_type = "INDEX_SLOW_LOGS"
+
+    # cloudwatch_log_group_arn (Required)
+    # 設定内容: ログの出力先となるCloudWatch LogsロググループのARNを指定します。
+    # 設定可能な値: 有効なCloudWatch LogsロググループARN
+    # 注意: OpenSearchサービスがロググループにログを送信できるリソースベースポリシー設定が必要
+    cloudwatch_log_group_arn = "arn:aws:logs:ap-northeast-1:123456789012:log-group:/aws/opensearch/example-domain"
+
+    # enabled (Optional)
+    # 設定内容: 当該ログ出力を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: ログ出力有効
+    #   - false: ログ出力無効
+    # 省略時: true
+    enabled = true
+  }
+
+  #-------------------------------------------------------------
+  # Cognito認証設定
+  #-------------------------------------------------------------
+
+  # cognito_options (Optional)
+  # 設定内容: OpenSearch DashboardsのCognito認証設定ブロックです。
+  # 関連機能: OpenSearch Cognito認証
+  #   Amazon CognitoユーザープールとIDプールを使用しOpenSearch Dashboards認証を実装。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cognito-auth.html
+  cognito_options {
+
+    # enabled (Optional)
+    # 設定内容: Cognito認証を有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: Cognito認証有効
+    #   - false: Cognito認証無効
+    # 省略時: false
+    enabled = false
+
+    # user_pool_id (Required)
+    # 設定内容: Cognitoユーザープールの IDを指定します。
+    # 設定可能な値: 有効なCognitoユーザープールID
+    user_pool_id = "ap-northeast-1_xxxxxxxxx"
+
+    # identity_pool_id (Required)
+    # 設定内容: CognitoアイデンティティプールのIDを指定します。
+    # 設定可能な値: 有効なCognitoアイデンティティプールID
+    identity_pool_id = "ap-northeast-1:00000000-0000-0000-0000-000000000000"
+
+    # role_arn (Required)
+    # 設定内容: OpenSearchがCognito連携に使用するIAMロールのARNを指定します。
+    # 設定可能な値: AmazonOpenSearchServiceCognitoAccess相当のポリシーがアタッチされたIAMロールARN
+    role_arn = "arn:aws:iam::123456789012:role/service-role/CognitoAccessForAmazonOpenSearch"
+  }
+
+  #-------------------------------------------------------------
+  # IAM Identity Center連携設定
+  #-------------------------------------------------------------
+
+  # identity_center_options (Optional)
+  # 設定内容: AWS IAM Identity Centerとの連携設定ブロックです。
+  # 関連機能: OpenSearch IAM Identity Center連携
+  #   IAM Identity CenterユーザーでOpenSearch Dashboardsへのシングルサインオンを提供。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/identity-center.html
   identity_center_options {
-    # 設定内容: Identity Center APIアクセスを有効化するか
-    # 設定可能な値: true / false
-    # 省略時: AWSがデフォルト設定を使用
+
+    # enabled_api_access (Optional)
+    # 設定内容: IAM Identity Center連携によるAPIアクセスを有効化するかを指定します。
+    # 設定可能な値:
+    #   - true: 有効化
+    #   - false: 無効化
+    # 省略時: 設定なし
     enabled_api_access = false
 
-    # 設定内容: 統合するIAM Identity CenterインスタンスのARN
-    # 設定可能な値: IAM Identity CenterインスタンスのARN
-    # 省略時: AWSがデフォルト設定を使用
+    # identity_center_instance_arn (Optional)
+    # 設定内容: 連携先IAM Identity CenterインスタンスのARNを指定します。
+    # 設定可能な値: 有効なIdentity CenterインスタンスARN
+    # 省略時: 設定なし
     identity_center_instance_arn = null
 
-    # 設定内容: OpenSearchのロールマッピングに使用されるJWTクレームキー
-    # 設定可能な値: JWTクレームキー文字列
-    # 省略時: AWSがデフォルト設定を使用
-    # roles_key = null
+    # subject_key (Optional)
+    # 設定内容: 認証時のサブジェクト（ユーザー識別子）として使用する属性を指定します。
+    # 設定可能な値: "UserName", "UserId" 等
+    # 省略時: AWSのデフォルト値
+    subject_key = "UserName"
 
-    # 設定内容: OpenSearchのユーザー識別に使用されるJWTクレームキー
-    # 設定可能な値: JWTクレームキー文字列
-    # 省略時: AWSがデフォルト設定を使用
-    # subject_key = null
+    # roles_key (Optional)
+    # 設定内容: 認証時のロール情報として使用する属性を指定します。
+    # 設定可能な値: "GroupName", "GroupId" 等
+    # 省略時: AWSのデフォルト値
+    roles_key = "GroupName"
   }
 
-  #---------------------------------------
-  # ソフトウェアアップデート設定
-  #---------------------------------------
+  #-------------------------------------------------------------
+  # デプロイメント戦略設定
+  #-------------------------------------------------------------
 
-  software_update_options {
-    # 設定内容: 自動ソフトウェアアップデートを有効化するか
-    # 設定可能な値: true / false
-    # 省略時: false
-    auto_software_update_enabled = false
+  # deployment_strategy_options (Optional)
+  # 設定内容: 設定変更時のデプロイメント戦略の設定ブロックです。
+  # 関連機能: OpenSearch ブルー/グリーンデプロイメント
+  #   ドメイン設定変更時のクラスター更新方式（ブルー/グリーン or インプレース）を制御。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-configuration-changes.html
+  deployment_strategy_options {
+
+    # deployment_strategy (Required)
+    # 設定内容: ドメイン構成変更時のデプロイ戦略を指定します。
+    # 設定可能な値:
+    #   - "BLUE_GREEN": ブルー/グリーンデプロイで更新（既定）
+    #   - "ROLLING_UPDATE": ローリングアップデートで更新
+    #   - "OPENSEARCH_NATIVE_ROLLING_UPDATE": OpenSearchネイティブのローリングアップデート
+    deployment_strategy = "BLUE_GREEN"
   }
 
-  #---------------------------------------
-  # スナップショット設定（Elasticsearch 5.3以前向け、非推奨）
-  #---------------------------------------
-
-  snapshot_options {
-    # 設定内容: 自動日次スナップショット開始時刻（UTC時）
-    # 設定可能な値: 0〜23（OpenSearch_X.Y および Elasticsearch 5.3以降では時間ごとに自動取得されるため無効）
-    # 省略時: 省略不可（必須）
-    automated_snapshot_start_hour = 0
-  }
-
-  #---------------------------------------
+  #-------------------------------------------------------------
   # タイムアウト設定
-  #---------------------------------------
+  #-------------------------------------------------------------
 
+  # timeouts (Optional)
+  # 設定内容: リソースの作成・更新・削除操作のタイムアウト設定ブロックです。
+  # 関連機能: Terraform timeouts
+  #   - https://developer.hashicorp.com/terraform/language/resources/syntax#operation-timeouts
   timeouts {
-    # 設定内容: リソース作成のタイムアウト
-    # 設定可能な値: "60m", "2h" などのDuration文字列
-    # 省略時: 60分
+
+    # create (Optional)
+    # 設定内容: ドメイン作成のタイムアウトを指定します。
+    # 設定可能な値: Go duration形式の文字列（例: "60m", "2h"）
+    # 省略時: プロバイダーデフォルト
     create = "60m"
 
-    # 設定内容: リソース更新のタイムアウト
-    # 設定可能な値: "60m", "2h" などのDuration文字列
-    # 省略時: 60分
-    update = "60m"
+    # update (Optional)
+    # 設定内容: ドメイン更新のタイムアウトを指定します。
+    # 設定可能な値: Go duration形式の文字列
+    # 省略時: プロバイダーデフォルト
+    update = "180m"
 
-    # 設定内容: リソース削除のタイムアウト
-    # 設定可能な値: "60m", "2h" などのDuration文字列
-    # 省略時: 90分
+    # delete (Optional)
+    # 設定内容: ドメイン削除のタイムアウトを指定します。
+    # 設定可能な値: Go duration形式の文字列
+    # 省略時: プロバイダーデフォルト
     delete = "90m"
+  }
+
+  #-------------------------------------------------------------
+  # タグ設定
+  #-------------------------------------------------------------
+
+  # tags (Optional)
+  # 設定内容: リソースに割り当てるタグのマップを指定します。
+  # 設定可能な値: キーと値のペアのマップ
+  # 関連機能: AWSリソースタグ付け
+  #   プロバイダーレベルのdefault_tags設定ブロックで定義されたタグと
+  #   一致するキーを持つタグは、プロバイダーレベルで定義されたものを上書きします。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-awsresourcetagging.html
+  tags = {
+    Name        = "example-domain"
+    Environment = "production"
   }
 }
 
-#---------------------------------------
-# Attributes Reference（参照専用）
-#---------------------------------------
-
-# aws_opensearch_domain.example.arn                                 - ドメインのARN
-# aws_opensearch_domain.example.domain_id                           - ドメインの一意識別子
-# aws_opensearch_domain.example.endpoint                            - HTTPSスキームなしのドメインエンドポイント
-# aws_opensearch_domain.example.endpoint_v2                         - デュアルスタックエンドポイント（dualstack時）
-# aws_opensearch_domain.example.dashboard_endpoint                  - OpenSearch Dashboardsエンドポイント
-# aws_opensearch_domain.example.dashboard_endpoint_v2               - デュアルスタックDashboardsエンドポイント
-# aws_opensearch_domain.example.domain_endpoint_v2_hosted_zone_id   - デュアルスタックのRoute 53ホストゾーンID
-# aws_opensearch_domain.example.tags_all                            - 継承タグ含むすべてのタグ
-# aws_opensearch_domain.example.vpc_options[0].vpc_id               - VPC配置時のVPC ID
-# aws_opensearch_domain.example.vpc_options[0].availability_zones   - VPC配置時のAZセット
+#---------------------------------------------------------------
+# Attributes Reference (読み取り専用属性)
+#---------------------------------------------------------------
+# このリソースは以下の属性をエクスポートします:
+#
+# - id: ドメインのID
+# - arn: ドメインのAmazon Resource Name (ARN)
+# - domain_id: AWS内部のドメイン一意識別子
+# - endpoint: ドメインサービス固有のエンドポイントFQDN
+# - endpoint_v2: デュアルスタック対応エンドポイントFQDN
+# - domain_endpoint_v2_hosted_zone_id: endpoint_v2のホストゾーンID
+# - dashboard_endpoint: OpenSearch DashboardsのエンドポイントFQDN
+# - dashboard_endpoint_v2: OpenSearch Dashboardsのデュアルスタック対応エンドポイント
+# - vpc_options.availability_zones: VPC配置時のAZリスト
+# - vpc_options.vpc_id: VPC ID
+# - tags_all: 継承タグを含む全タグマップ
+#---------------------------------------------------------------

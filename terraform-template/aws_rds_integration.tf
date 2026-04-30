@@ -15,8 +15,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/rds_integration
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -58,7 +58,7 @@ resource "aws_rds_integration" "example" {
   # データフィルタリング設定
   #-------------------------------------------------------------
 
-  # data_filter (Optional, Forces new resource)
+  # data_filter (Optional)
   # 設定内容: 統合のデータフィルターを指定します。
   #   ソースデータベースのどのテーブルをターゲットのAmazon Redshiftデータウェアハウスに
   #   送信するかを制御するフィルター式を設定します。
@@ -122,6 +122,14 @@ resource "aws_rds_integration" "example" {
     # 省略時: プロバイダーのデフォルトタイムアウトを使用
     create = "60m"
 
+    # update (Optional)
+    # 設定内容: リソース更新操作のタイムアウト時間を指定します。
+    # 設定可能な値: 数値と単位サフィックスで構成される期間文字列
+    #   例: "30s"（30秒）、"5m"（5分）、"2h"（2時間）、"2h45m"
+    #   有効な時間単位: "s"（秒）、"m"（分）、"h"（時間）
+    # 省略時: プロバイダーのデフォルトタイムアウトを使用
+    update = "60m"
+
     # delete (Optional)
     # 設定内容: リソース削除操作のタイムアウト時間を指定します。
     # 設定可能な値: 数値と単位サフィックスで構成される期間文字列
@@ -139,6 +147,8 @@ resource "aws_rds_integration" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: Zero-ETL統合のARN
+#
+# - integration_identifier: Zero-ETL統合の識別子
 #
 # - id: (非推奨) Zero-ETL統合のARN。arn属性を代わりに使用してください。
 #

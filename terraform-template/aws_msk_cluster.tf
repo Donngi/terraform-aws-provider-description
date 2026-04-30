@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/msk_cluster
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -129,6 +129,17 @@ resource "aws_msk_cluster" "example" {
     # 設定内容: ブローカーの接続設定を指定するブロックです。
     # パブリックアクセスや VPC 接続のオプションを設定します。
     connectivity_info {
+      # network_type (Optional, Computed)
+      # 設定内容: ブローカーノードに割り当てるネットワークタイプを指定します。
+      # 設定可能な値:
+      #   - "SINGLE_VPC": 単一 VPC でのアクセス（IPv4）
+      #   - "DUAL_STACK": IPv4 と IPv6 の両方をサポートするデュアルスタック構成
+      # 省略時: AWS 側でデフォルトのネットワークタイプが設定されます
+      # 注意: DUAL_STACK を有効化するには、サブネットとセキュリティグループが
+      #       IPv6 をサポートしている必要があります。
+      # 参考: https://docs.aws.amazon.com/msk/latest/developerguide/ipv6-and-msk.html
+      network_type = "SINGLE_VPC"
+
       # public_access (Optional)
       # 設定内容: ブローカーへのパブリックアクセスを制御するブロックです。
       public_access {

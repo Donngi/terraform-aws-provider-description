@@ -20,8 +20,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/observabilityadmin_centralization_rule_for_organization
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -72,20 +72,29 @@ resource "aws_observabilityadmin_centralization_rule_for_organization" "example"
       # 設定内容: ソース側のログ収集に関する設定を行うブロックです。
       source_logs_configuration {
 
-        # log_group_selection_criteria (Required)
-        # 設定内容: 収集対象のロググループを選択する基準を指定します。
-        # 設定可能な値:
-        #   - "*": すべてのロググループを対象
-        #   - "LogGroupName LIKE '/aws/lambda%'" 等のOAMフィルタ構文
-        # 注意: 1〜2000文字の範囲で指定
-        log_group_selection_criteria = "*"
-
         # encrypted_log_group_strategy (Required)
         # 設定内容: 暗号化済みロググループの取り扱い戦略を指定します。
         # 設定可能な値:
         #   - "ALLOW": 暗号化済みロググループも含めて収集
         #   - "SKIP": 暗号化済みロググループを除外して収集
         encrypted_log_group_strategy = "SKIP"
+
+        # log_group_selection_criteria (Optional)
+        # 設定内容: 収集対象のロググループを選択する基準を指定します。
+        # 設定可能な値:
+        #   - "*": すべてのロググループを対象
+        #   - "LogGroupName LIKE '/aws/lambda%'" 等のOAMフィルタ構文
+        # 注意: 1〜2000文字の範囲で指定
+        # 省略時: APIにより既定値が計算されます
+        log_group_selection_criteria = "*"
+
+        # data_source_selection_criteria (Optional)
+        # 設定内容: 収集対象のテレメトリデータソースを選択する基準を指定します。
+        # 設定可能な値:
+        #   - "*": すべてのデータソースを対象
+        #   - サポートされるテレメトリタイプを示すフィルタ式
+        # 省略時: APIにより既定値が計算されます
+        data_source_selection_criteria = "*"
       }
     }
 

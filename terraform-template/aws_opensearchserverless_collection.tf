@@ -15,12 +15,13 @@
 #   - Amazon OpenSearch Serverless概要: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html
 #   - コレクションの作成: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-create.html
 #   - コレクション管理: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-collections.html
+#   - 暗号化設定: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-encryption.html
 #
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/opensearchserverless_collection
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-18
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -55,7 +56,9 @@ resource "aws_opensearchserverless_collection" "example" {
   #   - "TIMESERIES": ログ分析・時系列データ向け。ホットとウォームストレージを組み合わせて使用
   #   - "VECTORSEARCH": ベクター検索ユースケース向け。全データをホットストレージに保存
   # 省略時: "TIMESERIES"
-  # 参考: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html
+  # 関連機能: コレクションタイプ
+  #   ユースケースごとに最適化されたストレージ・インデックス構成が自動適用されます。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html
   type = "TIMESERIES"
 
   #-------------------------------------------------------------
@@ -68,8 +71,41 @@ resource "aws_opensearchserverless_collection" "example" {
   #   - "ENABLED": スタンバイレプリカを有効化。高可用性が確保されますが、コストが増加します
   #   - "DISABLED": スタンバイレプリカを無効化。開発・テスト環境でのコスト削減に適しています
   # 省略時: "ENABLED"
-  # 参考: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html
+  # 関連機能: OpenSearch Serverless スケーリング
+  #   スタンバイレプリカは複数AZにレプリカを配置し、高可用性を提供します。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html
   standby_replicas = "ENABLED"
+
+  #-------------------------------------------------------------
+  # コレクショングループ設定
+  #-------------------------------------------------------------
+
+  # collection_group_name (Optional)
+  # 設定内容: このコレクションを関連付けるコレクショングループの名前を指定します。
+  # 設定可能な値: 既存のコレクショングループ名
+  # 省略時: コレクショングループに関連付けません
+  # 関連機能: OpenSearch Serverless コレクショングループ
+  #   複数のコレクションをグループ化し、共通設定や課金単位を一元管理する機能です。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-collections.html
+  collection_group_name = null
+
+  #-------------------------------------------------------------
+  # 暗号化設定
+  #-------------------------------------------------------------
+
+  # encryption_config (Optional)
+  # 設定内容: コレクションの暗号化設定を指定します。リスト形式のオブジェクト属性です。
+  # 設定可能な値:
+  #   - aws_owned_key (bool): AWS所有キーで暗号化するかどうか
+  #   - kms_key_arn (string): カスタマーマネージドKMSキーのARN
+  # 省略時: 関連する暗号化セキュリティポリシー（aws_opensearchserverless_security_policy）
+  #         で定義された設定が適用されます。
+  # 関連機能: OpenSearch Serverless 暗号化
+  #   コレクション作成前に暗号化セキュリティポリシーの作成が必須です。
+  #   通常はaws_opensearchserverless_security_policyリソースで暗号化設定を管理します。
+  #   - https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-encryption.html
+  # 注意: この属性はcomputed属性も兼ねるため、未指定の場合はAWS側で設定された値が反映されます。
+  encryption_config = null
 
   #-------------------------------------------------------------
   # リージョン設定
@@ -125,8 +161,7 @@ resource "aws_opensearchserverless_collection" "example" {
 # - id: コレクションの一意識別子
 # - collection_endpoint: インデックス・検索・データアップロードリクエストの送信に使用する
 #                        コレクション固有のエンドポイント
-# - dashboard_endpoint: OpenSearch Dashboardsへのアクセスに使用する
-#                       コレクション固有のエンドポイント
+# - dashboard_endpoint: OpenSearch Dashboardsへのアクセスに使用するエンドポイント
 # - kms_key_arn: コレクションの暗号化に使用するAWS KMSキーのARN
 # - tags_all: プロバイダーのdefault_tags設定ブロックから継承されたタグを含む、
 #             リソースに割り当てられたすべてのタグのマップ

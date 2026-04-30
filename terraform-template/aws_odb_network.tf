@@ -16,8 +16,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/odb_network
 #
-# Provider Version: 6.36.0
-# Generated: 2026-03-18
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -137,6 +137,19 @@ resource "aws_odb_network" "example" {
   # 省略時: デフォルトのアクセスポリシーが適用されます。
   # 注意: sts_access が "ENABLED" の場合のみ有効です。
   sts_policy_document = null
+
+  #-------------------------------------------------------------
+  # クロスリージョンリストア設定
+  #-------------------------------------------------------------
+
+  # cross_region_s3_restore_sources_access (Optional)
+  # 設定内容: ODBネットワークでクロスリージョンS3リストアを有効化するソースリージョンの一覧を指定します。
+  #           指定したリージョンに保存されているS3バックアップから、現在のリージョンのODB
+  #           ネットワークへリストアを行うことが可能になります。
+  # 設定可能な値: 有効なAWSリージョンコードのセット（例: ["us-east-1", "us-west-2"]）
+  # 省略時: クロスリージョンリストアは有効化されません。
+  # 注意: s3_access が "ENABLED" の状態である必要があります。
+  cross_region_s3_restore_sources_access = null
 
   #-------------------------------------------------------------
   # DNS設定

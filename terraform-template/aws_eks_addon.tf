@@ -21,8 +21,8 @@
 # Terraform Registry:
 #   - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
 #
-# Provider Version: 6.28.0
-# Generated: 2026-02-17
+# Provider Version: 6.43.0
+# Generated: 2026-04-30
 # NOTE: 本テンプレートは生成時点の情報に基づきAIが生成しています。
 #       情報が古くなっている可能性、誤りを含む可能性があるため、
 #       正確な最新仕様は公式ドキュメントを参照してください。
@@ -31,10 +31,10 @@
 
 resource "aws_eks_addon" "example" {
   #-------------------------------------------------------------
-  # 必須パラメータ
+  # 基本設定
   #-------------------------------------------------------------
 
-  # cluster_name (Required)
+  # cluster_name (Required, Forces new resource)
   # 設定内容: Add-on をインストールするEKSクラスター名を指定します。
   # 設定可能な値: 有効なEKSクラスター名
   # 用途: Add-on を関連付けるクラスターの識別
@@ -43,7 +43,7 @@ resource "aws_eks_addon" "example" {
   #   - https://docs.aws.amazon.com/eks/latest/userguide/clusters.html
   cluster_name = "my-eks-cluster"
 
-  # addon_name (Required)
+  # addon_name (Required, Forces new resource)
   # 設定内容: インストールするAdd-on の名前を指定します。
   # 設定可能な値: サポートされているAdd-on名 (例: vpc-cni, kube-proxy, coredns, aws-ebs-csi-driver など)
   # 注意: 利用可能なAdd-on名は describe-addon-versions コマンドで確認できます
@@ -56,7 +56,7 @@ resource "aws_eks_addon" "example" {
   # バージョン管理
   #-------------------------------------------------------------
 
-  # addon_version (Optional, Computed)
+  # addon_version (Optional)
   # 設定内容: インストールするAdd-on のバージョンを指定します。
   # 設定可能な値: 有効なAdd-onバージョン (例: v1.16.0-eksbuild.1)
   # 省略時: クラスターのKubernetesバージョンに対応する最新バージョンが使用されます
@@ -70,7 +70,7 @@ resource "aws_eks_addon" "example" {
   # 設定とカスタマイズ
   #-------------------------------------------------------------
 
-  # configuration_values (Optional, Computed)
+  # configuration_values (Optional)
   # 設定内容: Add-on のカスタム設定値をJSON文字列で指定します。
   # 設定可能な値: Add-onのJSONスキーマに準拠したJSON文字列
   # 省略時: Add-onのデフォルト設定が使用されます
@@ -124,6 +124,28 @@ resource "aws_eks_addon" "example" {
   service_account_role_arn = null
 
   #-------------------------------------------------------------
+  # 名前空間設定
+  #-------------------------------------------------------------
+
+  # namespace_config (Optional)
+  # 設定内容: Add-on をインストールするKubernetes名前空間 (Namespace) を指定する設定ブロックです。
+  # 用途: Add-onが利用するカスタム名前空間をリソース作成時に指定
+  # 注意: Add-onが namespace 設定をサポートしている場合のみ有効です
+  # 関連機能: Amazon EKS Add-on Namespace Configuration
+  #   Add-onのインストール先名前空間をカスタマイズすることができます。
+  #   - https://docs.aws.amazon.com/eks/latest/APIReference/API_AddonNamespaceConfigRequest.html
+  namespace_config {
+
+    # namespace (Optional, Computed)
+    # 設定内容: Add-on をインストールするKubernetes名前空間の名前を指定します。
+    # 設定可能な値: 有効なKubernetes名前空間名
+    # 省略時: Add-onのデフォルト名前空間が使用されます (例: kube-system)
+    # 関連機能: Kubernetes Namespaces
+    #   - https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+    namespace = "kube-system"
+  }
+
+  #-------------------------------------------------------------
   # Pod Identity 関連付け
   #-------------------------------------------------------------
 
@@ -134,23 +156,24 @@ resource "aws_eks_addon" "example" {
   # 関連機能: Amazon EKS Pod Identity
   #   Pod Identity エージェントが自動的にIAMクレデンシャルを管理します。
   #   - https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html
-  # pod_identity_association {
-  #   # role_arn (Required)
-  #   # 設定内容: サービスアカウントに関連付けるIAMロールのARNを指定します。
-  #   # 設定可能な値: 有効なIAMロールのARN
-  #   # 用途: Pod Identity エージェントがこのロールを引き受けてアプリケーションにクレデンシャルを提供
-  #   # 関連機能: EKS Pod Identity Agent
-  #   #   - https://docs.aws.amazon.com/eks/latest/userguide/pod-id-agent-setup.html
-  #   role_arn = "arn:aws:iam::123456789012:role/eks-pod-identity-role"
-  #
-  #   # service_account (Required)
-  #   # 設定内容: IAMクレデンシャルを関連付けるKubernetesサービスアカウント名を指定します。
-  #   # 設定可能な値: クラスター内に存在するKubernetesサービスアカウント名
-  #   # 用途: このサービスアカウントを使用するPodがIAMロールのクレデンシャルを取得
-  #   # 関連機能: Kubernetes Service Accounts
-  #   #   - https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
-  #   service_account = "my-service-account"
-  # }
+  pod_identity_association {
+
+    # role_arn (Required)
+    # 設定内容: サービスアカウントに関連付けるIAMロールのARNを指定します。
+    # 設定可能な値: 有効なIAMロールのARN
+    # 用途: Pod Identity エージェントがこのロールを引き受けてアプリケーションにクレデンシャルを提供
+    # 関連機能: EKS Pod Identity Agent
+    #   - https://docs.aws.amazon.com/eks/latest/userguide/pod-id-agent-setup.html
+    role_arn = "arn:aws:iam::123456789012:role/eks-pod-identity-role"
+
+    # service_account (Required)
+    # 設定内容: IAMクレデンシャルを関連付けるKubernetesサービスアカウント名を指定します。
+    # 設定可能な値: クラスター内に存在するKubernetesサービスアカウント名
+    # 用途: このサービスアカウントを使用するPodがIAMロールのクレデンシャルを取得
+    # 関連機能: Kubernetes Service Accounts
+    #   - https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+    service_account = "my-service-account"
+  }
 
   #-------------------------------------------------------------
   # 削除時の保持設定
@@ -171,7 +194,7 @@ resource "aws_eks_addon" "example" {
   # リージョン設定
   #-------------------------------------------------------------
 
-  # region (Optional, Computed)
+  # region (Optional)
   # 設定内容: このリソースを管理するリージョンを指定します。
   # 設定可能な値: 有効なAWSリージョンコード (例: us-east-1, ap-northeast-1)
   # 省略時: プロバイダー設定のリージョンを使用
@@ -194,38 +217,34 @@ resource "aws_eks_addon" "example" {
     Environment = "production"
   }
 
-  # tags_all (Optional, Computed)
-  # 設定内容: プロバイダーのdefault_tagsから継承されるタグを含む全タグのマップ
-  # 注意: 通常は明示的に設定する必要はありません。Terraformが自動管理します
-  tags_all = null
-
-  # id (Optional, Computed)
-  # 設定内容: リソースのID。クラスター名とAdd-on名をコロン (:) で結合した形式
-  # 注意: 通常は明示的に設定する必要はありません。Terraformが自動管理します
-  id = null
-
   #-------------------------------------------------------------
   # タイムアウト設定
   #-------------------------------------------------------------
-  # timeouts {
-  #   # create (Optional)
-  #   # 設定内容: Add-on 作成のタイムアウト時間を指定します。
-  #   # 設定可能な値: 時間文字列 (例: "20m", "1h")
-  #   # 省略時: デフォルトのタイムアウト値を使用
-  #   create = "20m"
-  #
-  #   # update (Optional)
-  #   # 設定内容: Add-on 更新のタイムアウト時間を指定します。
-  #   # 設定可能な値: 時間文字列 (例: "20m", "1h")
-  #   # 省略時: デフォルトのタイムアウト値を使用
-  #   update = "20m"
-  #
-  #   # delete (Optional)
-  #   # 設定内容: Add-on 削除のタイムアウト時間を指定します。
-  #   # 設定可能な値: 時間文字列 (例: "40m", "1h")
-  #   # 省略時: デフォルトのタイムアウト値を使用
-  #   delete = "40m"
-  # }
+
+  # timeouts (Optional)
+  # 設定内容: 各操作のタイムアウト時間を指定する設定ブロックです。
+  # 関連機能: Terraform Resource Timeouts
+  #   - https://developer.hashicorp.com/terraform/language/resources/syntax#operation-timeouts
+  timeouts {
+
+    # create (Optional)
+    # 設定内容: Add-on 作成のタイムアウト時間を指定します。
+    # 設定可能な値: 時間文字列 (例: "20m", "1h")
+    # 省略時: デフォルトのタイムアウト値を使用
+    create = "20m"
+
+    # update (Optional)
+    # 設定内容: Add-on 更新のタイムアウト時間を指定します。
+    # 設定可能な値: 時間文字列 (例: "20m", "1h")
+    # 省略時: デフォルトのタイムアウト値を使用
+    update = "20m"
+
+    # delete (Optional)
+    # 設定内容: Add-on 削除のタイムアウト時間を指定します。
+    # 設定可能な値: 時間文字列 (例: "40m", "1h")
+    # 省略時: デフォルトのタイムアウト値を使用
+    delete = "40m"
+  }
 }
 
 #---------------------------------------------------------------
@@ -234,15 +253,8 @@ resource "aws_eks_addon" "example" {
 # このリソースは以下の属性をエクスポートします:
 #
 # - arn: EKS Add-on のAmazon Resource Name (ARN)
-#
-# - id: EKSクラスター名とAdd-on名をコロン (:) で区切った形式
-#   形式: <cluster_name>:<addon_name>
-#
-# - status: EKS Add-on のステータス
-#   可能な値: CREATING, ACTIVE, UPDATING, DELETING, CREATE_FAILED, UPDATE_FAILED, DELETE_FAILED
-#
+# - id: EKSクラスター名とAdd-on名をコロンで区切った形式 (<cluster_name>:<addon_name>)
 # - created_at: EKS Add-on が作成された日時 (RFC3339形式)
-#
 # - modified_at: EKS Add-on が最後に更新された日時 (RFC3339形式)
-#
+# - tags_all: 継承タグを含む全タグマップ
 #---------------------------------------------------------------
